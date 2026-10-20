@@ -201,6 +201,8 @@ https://minimaxflora.github.io/ZeroWrt/history.json  # 页面用的历史记录
 | `history.json` | 每次构建追加一条，页面据此渲染更新日志，默认保留 120 条 |
 | `.nojekyll` | 跳过 Jekyll，保证 `assets/` 原样发布 |
 
+![下载页](docs/preview.png)
+
 页面特性：
 
 - 按设备卡片列出最新镜像：版本、构建时间、大小、SHA256（点「复制」），直接下载；
