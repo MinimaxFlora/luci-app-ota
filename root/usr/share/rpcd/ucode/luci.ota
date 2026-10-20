@@ -1,0 +1,104 @@
+#!/usr/bin/env ucode
+// SPDX-License-Identifier: MIT
+//
+// rpcd object "luci.ota".
+//
+// The actual work is done by /usr/bin/ota; this module only exposes it to the
+// web interface through ubus and guarantees that the web interface always
+// receives a JSON object, even when the backend fails.
+
+import { popen } from 'fs';
+
+const OTA = '/usr/bin/ota';
+
+function str(value) {
+	return (value == null) ? '' : sprintf('%s', value);
+}
+
+function run(sub, extra) {
+	let command = OTA + ' ' + sub;
+
+	if (extra != null)
+		command = command + ' ' + extra;
+
+	let fd = null;
+
+	try {
+		fd = popen(command + ' 2>/dev/null', 'r');
+	}
+	catch (e) {
+		return { ok: false, code: 'exec', msg: str(e) };
+	}
+
+	if (fd == null)
+		return { ok: false, code: 'exec', msg: 'could not run ' + OTA };
+
+	const output = fd.read('all');
+
+	fd.close();
+
+	const text = trim(str(output));
+
+	if (text == '')
+		return { ok: false, code: 'exec', msg: 'no output from ' + OTA };
+
+	let result = null;
+
+	try {
+		result = json(text);
+	}
+	catch (e) {
+		return { ok: false, code: 'exec', msg: 'invalid backend output: ' + text };
+	}
+
+	if (type(result) != 'object')
+		return { ok: false, code: 'exec', msg: 'unexpected backend output: ' + text };
+
+	return result;
+}
+
+const methods = {
+	info: {
+		call: function() {
+			return run('info', null);
+		}
+	},
+
+	check: {
+		call: function() {
+			return run('check', null);
+		}
+	},
+
+	status: {
+		call: function() {
+			return run('status', null);
+		}
+	},
+
+	download: {
+		call: function() {
+			return run('download', null);
+		}
+	},
+
+	cancel: {
+		call: function() {
+			return run('cancel', null);
+		}
+	},
+
+	apply: {
+		args: { keep: 1 },
+		call: function(req) {
+			let keep = 1;
+
+			if (req != null && req.args != null && req.args.keep != null)
+				keep = (req.args.keep == 1 || req.args.keep == '1') ? 1 : 0;
+
+			return run('apply', '--keep ' + keep);
+		}
+	}
+};
+
+return { 'luci.ota': methods };

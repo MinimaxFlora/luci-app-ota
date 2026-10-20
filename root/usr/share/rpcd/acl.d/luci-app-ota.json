@@ -1,0 +1,17 @@
+{
+	"luci-app-ota": {
+		"description": "Grant access to the OTA firmware update functionality",
+		"read": {
+			"ubus": {
+				"luci.ota": [ "info", "check", "status" ]
+			},
+			"uci": [ "ota" ]
+		},
+		"write": {
+			"ubus": {
+				"luci.ota": [ "download", "cancel", "apply" ]
+			},
+			"uci": [ "ota" ]
+		}
+	}
+}

@@ -1,0 +1,11 @@
+# Keep every text file LF so shell scripts and ucode keep working when the
+# repository is checked out on Windows.
+* text=auto eol=lf
+
+*.uc      text eol=lf
+*.sh      text eol=lf
+*.js      text eol=lf
+*.json    text eol=lf
+*.po      text eol=lf
+*.pot     text eol=lf
+Makefile  text eol=lf

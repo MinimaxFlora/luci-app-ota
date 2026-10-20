@@ -1,0 +1,13 @@
+diff --git a/scripts/zerowrt_core/configgen.py b/scripts/zerowrt_core/configgen.py
+index 6e382f7..1d862d2 100644
+--- a/scripts/zerowrt_core/configgen.py
++++ b/scripts/zerowrt_core/configgen.py
+@@ -21,6 +21,8 @@ PACKAGES = [
+     "CONFIG_PACKAGE_luci-app-argon-config",
+     "CONFIG_PACKAGE_luci-app-passwall",
+     "CONFIG_PACKAGE_luci-app-openclash",
++    "CONFIG_PACKAGE_luci-app-ota",
++    "CONFIG_PACKAGE_luci-i18n-ota-zh-cn",
+ ]
+ 
+ # Targets that are selected by a regular target profile instead of a device.

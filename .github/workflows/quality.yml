@@ -1,0 +1,87 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint and validate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Shell syntax
+        run: |
+          sh -n root/usr/libexec/ota-download
+          sh -n tools/publish_ota_index.sh
+          echo "shell scripts OK"
+
+      - name: JSON syntax
+        run: |
+          for file in root/usr/share/luci/menu.d/*.json root/usr/share/rpcd/acl.d/*.json; do
+            python3 -m json.tool "$file" > /dev/null
+            echo "OK: $file"
+          done
+
+      - name: Python syntax
+        run: |
+          python3 -m py_compile tools/gen_ota_index.py tools/embed_ota_meta.py
+          echo "python OK"
+
+      - name: JavaScript syntax
+        run: |
+          for file in $(find htdocs -name '*.js'); do
+            node --check "$file"
+            echo "OK: $file"
+          done
+
+      - name: ucode backend syntax
+        run: |
+          # The backend is plain enough to be parsed by a JS parser; the
+          # top level "return" of the rpcd plugin is stripped first because it
+          # is a ucode-only construct.
+          cp root/usr/bin/ota /tmp/ota.mjs
+          node --check /tmp/ota.mjs
+          sed 's/^return /const __exports = /' root/usr/share/rpcd/ucode/luci.ota > /tmp/luci.ota.mjs
+          node --check /tmp/luci.ota.mjs
+          echo "ucode scripts OK"
+
+      - name: Translations
+        run: |
+          if ! command -v msgfmt > /dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq gettext
+          fi
+          for file in po/*/*.po; do
+            msgfmt --check -o /dev/null "$file"
+            echo "OK: $file"
+          done
+
+      - name: Config file defaults
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          config = Path("root/etc/config/ota").read_text(encoding="utf-8")
+          required = ["api_url", "device", "auto_check", "keep_settings",
+                      "verify_image", "ipv4_only", "allow_insecure"]
+          missing = [opt for opt in required if f"option {opt} " not in config]
+          if missing:
+              raise SystemExit(f"root/etc/config/ota is missing: {missing}")
+
+          # Every option offered in the configuration view must exist in the
+          # default config, otherwise the form starts out empty.
+          view = Path("htdocs/luci-static/resources/view/ota/configuration.js").read_text(encoding="utf-8")
+          options = re.findall(r"form\.(?:Value|Flag),\s*'([a-z0-9_]+)'", view)
+          unknown = [opt for opt in options if f"option {opt} " not in config]
+          if unknown:
+              raise SystemExit(f"configuration view offers unknown options: {unknown}")
+          print("options OK:", ", ".join(options))
+          PY

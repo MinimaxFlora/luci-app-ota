@@ -1,0 +1,18 @@
+# scratch / build outputs
+_scratch/
+ota.json
+dist/
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# reference checkouts used during development
+_ref_*/

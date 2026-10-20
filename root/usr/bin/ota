@@ -1,0 +1,1124 @@
+#!/usr/bin/ucode
+// SPDX-License-Identifier: MIT
+//
+// luci-app-ota - online firmware upgrade backend.
+//
+// This script is the single source of truth for the OTA logic. It is used
+// both by the LuCI web interface (through the rpcd object "luci.ota") and
+// directly from the command line:
+//
+//     ota info            show local firmware and cached check result
+//     ota check           fetch the index and compare versions
+//     ota download        start the background download
+//     ota status          download progress/state
+//     ota cancel          abort the download
+//     ota apply --keep 1  run sysupgrade on the downloaded image
+//
+// Every sub command prints one JSON object on stdout and exits non zero when
+// "ok" is false, which makes it usable from shell scripts as well.
+
+import { readfile, writefile, popen, stat, statvfs, mkdir, unlink } from 'fs';
+import { cursor } from 'uci';
+
+const PLUGIN_VERSION = '1.0.0';
+
+const RUN_DIR     = '/var/run/ota';
+const DL_DIR      = RUN_DIR + '/dl';
+const IMAGE       = DL_DIR + '/firmware.img';
+const PART        = DL_DIR + '/firmware.img.part';
+const DL_LOG      = DL_DIR + '/download.log';
+const DL_PID      = DL_DIR + '/download.pid';
+const DL_EXIT     = DL_DIR + '/download.exit';
+const VERIFIED    = DL_DIR + '/firmware.verified';
+const SU_LOG      = DL_DIR + '/sysupgrade.log';
+const CHECK_CACHE = RUN_DIR + '/check.json';
+const INDEX_CACHE = RUN_DIR + '/index.json';
+
+const WORKER     = '/usr/libexec/ota-download';
+const SYSUPGRADE = '/sbin/sysupgrade';
+const META_FILE  = '/etc/ota/build.json';
+
+/* ------------------------------------------------------------------ */
+/* small generic helpers                                              */
+/* ------------------------------------------------------------------ */
+
+function S(v) {
+	if (v == null)
+		return '';
+
+	return sprintf('%s', v);
+}
+
+function or_str(v, def) {
+	if (v == null)
+		return def;
+
+	if (type(v) == 'string' && v == '')
+		return def;
+
+	return S(v);
+}
+
+function to_int(v, def) {
+	def = (def == null) ? 0 : def;
+
+	if (v == null)
+		return def;
+
+	if (type(v) == 'int')
+		return v;
+
+	if (type(v) == 'double')
+		return int(v);
+
+	if (type(v) == 'bool')
+		return v ? 1 : 0;
+
+	const t = trim(S(v));
+
+	if (length(t) == 0)
+		return def;
+
+	let digits = true;
+
+	for (let i = 0; i < length(t); i++) {
+		const ch = substr(t, i, 1);
+
+		if (ch < '0' || ch > '9') {
+			digits = false;
+			break;
+		}
+	}
+
+	return digits ? int(t) : def;
+}
+
+function flag_on(v) {
+	if (v == null)
+		return false;
+
+	if (type(v) == 'bool')
+		return v;
+
+	const s = lc(trim(S(v)));
+
+	return (s == '1' || s == 'true' || s == 'yes' || s == 'on' || s == 'enabled');
+}
+
+function safe_mkdir(path) {
+	try {
+		mkdir(path);
+	}
+	catch (e) {
+	}
+}
+
+function mkdir_p(path) {
+	const parts = split(path, '/');
+	let cur = '';
+
+	for (let i = 0; i < length(parts); i++) {
+		if (parts[i] == '')
+			continue;
+
+		cur = cur + '/' + parts[i];
+
+		if (stat(cur) == null)
+			safe_mkdir(cur);
+	}
+}
+
+function safe_unlink(path) {
+	try {
+		unlink(path);
+	}
+	catch (e) {
+	}
+}
+
+function safe_write(path, data) {
+	try {
+		writefile(path, data);
+		return true;
+	}
+	catch (e) {
+		return false;
+	}
+}
+
+function read_trim(path) {
+	const data = readfile(path);
+
+	if (data == null)
+		return null;
+
+	const t = trim(data);
+
+	return (length(t) == 0) ? null : t;
+}
+
+function json_load(path) {
+	const data = readfile(path);
+
+	if (data == null || length(trim(data)) == 0)
+		return null;
+
+	try {
+		return json(data);
+	}
+	catch (e) {
+		return null;
+	}
+}
+
+function json_store(path, value) {
+	return safe_write(path, sprintf('%J', value) + '\n');
+}
+
+function replace_all(str, needle, repl) {
+	if (needle == '')
+		return str;
+
+	let out = '';
+	let rest = str;
+
+	while (true) {
+		const pos = index(rest, needle);
+
+		if (pos < 0) {
+			out = out + rest;
+			break;
+		}
+
+		out = out + substr(rest, 0, pos) + repl;
+		rest = substr(rest, pos + length(needle));
+	}
+
+	return out;
+}
+
+function sh_quote(str) {
+	return "'" + replace_all(S(str), "'", "'\\''") + "'";
+}
+
+function tail_lines(text, count) {
+	if (text == null)
+		return '';
+
+	const lines = split(trim(S(text)), '\n');
+	const out = [];
+
+	for (let i = length(lines) - count; i < length(lines); i++) {
+		if (i >= 0)
+			out[length(out)] = lines[i];
+	}
+
+	return join('\n', out);
+}
+
+function run_capture(cmd) {
+	let fd = null;
+
+	try {
+		fd = popen(cmd + ' 2>&1', 'r');
+	}
+	catch (e) {
+		return { rc: 255, out: S(e) };
+	}
+
+	if (fd == null)
+		return { rc: 255, out: '' };
+
+	let out = '';
+
+	try {
+		out = S(fd.read('all'));
+	}
+	catch (e) {
+		out = S(e);
+	}
+
+	const rc = fd.close();
+
+	return { rc: (rc == null) ? 255 : rc, out: out };
+}
+
+// Start a command fully detached, so that it keeps running after the rpcd
+// call (or this script) returned. The shell backgrounds it and we only wait
+// for the short lived parent shell.
+function run_detached(cmd) {
+	try {
+		const fd = popen('(' + cmd + ') >/dev/null 2>&1 </dev/null', 'r');
+
+		if (fd != null) {
+			fd.read('all');
+			fd.close();
+		}
+
+		return true;
+	}
+	catch (e) {
+		return false;
+	}
+}
+
+function command_exists(name) {
+	const dirs = [ '/usr/bin', '/bin', '/usr/sbin', '/sbin' ];
+
+	for (let i = 0; i < length(dirs); i++)
+		if (stat(dirs[i] + '/' + name) != null)
+			return true;
+
+	return false;
+}
+
+function read_kv(path) {
+	const out = {};
+	const data = readfile(path);
+
+	if (data == null)
+		return out;
+
+	const lines = split(data, '\n');
+
+	for (let i = 0; i < length(lines); i++) {
+		const line = trim(lines[i]);
+
+		if (length(line) == 0 || substr(line, 0, 1) == '#')
+			continue;
+
+		const eq = index(line, '=');
+
+		if (eq <= 0)
+			continue;
+
+		const key = trim(substr(line, 0, eq));
+		let value = trim(substr(line, eq + 1));
+
+		if (length(value) >= 2) {
+			const first = substr(value, 0, 1);
+			const last = substr(value, length(value) - 1, 1);
+
+			if ((first == '"' && last == '"') || (first == "'" && last == "'"))
+				value = substr(value, 1, length(value) - 2);
+		}
+
+		out[key] = value;
+	}
+
+	return out;
+}
+
+function process_alive(pid) {
+	const p = to_int(pid, 0);
+
+	if (p <= 0)
+		return false;
+
+	if (stat('/proc/' + p) == null)
+		return false;
+
+	const cmdline = readfile('/proc/' + p + '/cmdline');
+
+	if (cmdline == null)
+		return false;
+
+	return (index(cmdline, 'ota-download') >= 0);
+}
+
+/* ------------------------------------------------------------------ */
+/* configuration                                                      */
+/* ------------------------------------------------------------------ */
+
+function cfg_flag(c, name, def) {
+	const v = c.get('ota', 'config', name);
+
+	if (v == null)
+		return def;
+
+	return flag_on(v);
+}
+
+function load_config() {
+	const cfg = {
+		api_url: '',
+		device: '',
+		auto_check: true,
+		keep_settings: true,
+		verify_image: true,
+		ipv4_only: true,
+		allow_insecure: false
+	};
+
+	let c = null;
+
+	try {
+		c = cursor();
+	}
+	catch (e) {
+		c = null;
+	}
+
+	if (c == null)
+		return cfg;
+
+	cfg.api_url = or_str(c.get('ota', 'config', 'api_url'), '');
+	cfg.device = or_str(c.get('ota', 'config', 'device'), '');
+	cfg.auto_check = cfg_flag(c, 'auto_check', true);
+	cfg.keep_settings = cfg_flag(c, 'keep_settings', true);
+	cfg.verify_image = cfg_flag(c, 'verify_image', true);
+	cfg.ipv4_only = cfg_flag(c, 'ipv4_only', true);
+	cfg.allow_insecure = cfg_flag(c, 'allow_insecure', false);
+
+	return cfg;
+}
+
+/* ------------------------------------------------------------------ */
+/* local firmware identification                                      */
+/* ------------------------------------------------------------------ */
+
+function vendor_device_key(name) {
+	if (name == null || name == '')
+		return '';
+
+	const pos = index(name, '_');
+
+	if (pos <= 0)
+		return '';
+
+	// "ruijie_rg-x60-new" -> "ruijie,rg-x60-new" (the DT compatible string)
+	return substr(name, 0, pos) + ',' + substr(name, pos + 1);
+}
+
+function local_info() {
+	let osr = read_kv('/etc/os-release');
+
+	if (length(keys(osr)) == 0)
+		osr = read_kv('/usr/lib/os-release');
+
+	const info = {
+		dist: or_str(osr.NAME, 'OpenWrt'),
+		version: S(osr.VERSION),
+		version_id: S(osr.VERSION_ID),
+		release: or_str(or_str(osr.OPENWRT_RELEASE, null), or_str(osr.PRETTY_NAME, '')),
+		board: S(osr.OPENWRT_BOARD),
+		arch: S(osr.OPENWRT_ARCH),
+		product: S(osr.OPENWRT_DEVICE_PRODUCT),
+		build_date: 0,
+		device: '',
+		model: '',
+		target: ''
+	};
+
+	// Optional metadata written by the image build (see integration/README).
+	const meta = json_load(META_FILE);
+
+	if (type(meta) == 'object') {
+		if (meta.build_date != null)
+			info.build_date = to_int(meta.build_date, 0);
+
+		if (meta.version != null && S(meta.version) != '')
+			info.version = S(meta.version);
+
+		if (meta.device != null)
+			info.device = S(meta.device);
+
+		if (meta.model != null)
+			info.model = S(meta.model);
+
+		if (meta.target != null && S(meta.target) != '')
+			info.board = S(meta.target);
+
+		if (meta.dist != null && S(meta.dist) != '')
+			info.dist = S(meta.dist);
+
+		if (meta.product != null && info.product == '')
+			info.product = S(meta.product);
+	}
+
+	if (info.build_date == 0)
+		info.build_date = to_int(osr.OPENWRT_BUILD_DATE, 0);
+
+	// Legacy key used by other OTA implementations
+	if (info.build_date == 0)
+		info.build_date = to_int(osr.BUILD_DATE, 0);
+
+	if (info.target == '')
+		info.target = info.board;
+
+	if (info.model == '')
+		info.model = info.device;
+
+	return info;
+}
+
+// Append "key" to the candidate list unless it is empty or already present.
+// Kept as a plain function (instead of a nested closure) to stay compatible
+// with older ucode builds.
+function add_key(keys, seen, key) {
+	if (key == null)
+		return;
+
+	const v = trim(S(key));
+
+	if (v == '' || seen[v] == true)
+		return;
+
+	seen[v] = true;
+	keys[length(keys)] = v;
+}
+
+// x86 firmware ships separate legacy BIOS and EFI images, so the index may
+// contain "<key>+bios" / "<key>+efi" variants. Prefer the variant that
+// matches the current boot mode and fall back to the plain key.
+function expand_variants(keys) {
+	const suffix = (stat('/sys/firmware/efi') != null) ? '+efi' : '+bios';
+	const out = [];
+
+	for (let i = 0; i < length(keys); i++) {
+		out[length(out)] = keys[i] + suffix;
+		out[length(out)] = keys[i];
+	}
+
+	return out;
+}
+
+function device_keys(cfg, local) {
+	const keys = [];
+	const seen = {};
+
+	if (cfg != null && cfg.device != '')
+		add_key(keys, seen, cfg.device);
+
+	if (local != null && local.device != '')
+		add_key(keys, seen, local.device);
+
+	if (local != null && local.model != '')
+		add_key(keys, seen, local.model);
+
+	if (local != null)
+		add_key(keys, seen, local.board);
+
+	add_key(keys, seen, read_trim('/tmp/sysinfo/board_name'));
+
+	const board = json_load('/etc/board.json');
+
+	if (type(board) == 'object' && board.model != null && board.model.id != null)
+		add_key(keys, seen, board.model.id);
+
+	if (local != null) {
+		add_key(keys, seen, vendor_device_key(local.device));
+		add_key(keys, seen, vendor_device_key(read_trim('/tmp/sysinfo/board_name')));
+		add_key(keys, seen, local.arch);
+
+		const probe = lc(S(local.board) + ' ' + S(local.arch));
+
+		if (index(probe, 'x86') >= 0) {
+			add_key(keys, seen, 'x86_64');
+			add_key(keys, seen, 'x86/64');
+			add_key(keys, seen, 'generic');
+		}
+	}
+
+	return expand_variants(keys);
+}
+
+/* ------------------------------------------------------------------ */
+/* index parsing and version comparison                               */
+/* ------------------------------------------------------------------ */
+
+function normalize_entry(raw) {
+	if (type(raw) != 'object')
+		return null;
+
+	const entry = {};
+
+	entry.url = or_str(or_str(raw.url, null), or_str(raw.download_url, ''));
+	entry.sha256 = lc(or_str(or_str(raw.sha256, null), or_str(raw.sha256sum, '')));
+	entry.size = to_int(raw.size, 0);
+
+	if (entry.size == 0)
+		entry.size = to_int(raw.filesize, 0);
+
+	entry.version = S(raw.version);
+	entry.build_date = to_int(raw.build_date, 0);
+
+	if (entry.build_date == 0)
+		entry.build_date = to_int(raw.builddate, 0);
+
+	entry.changelog = or_str(or_str(raw.changelog, null), or_str(raw.logs, or_str(raw.notes, '')));
+	entry.target = S(raw.target);
+	entry.profile = S(raw.profile);
+	entry.file = or_str(or_str(raw.file, null), or_str(raw.filename, ''));
+
+	if (entry.url == '')
+		return null;
+
+	return entry;
+}
+
+// Accepts both the compact "devices" layout written by tools/gen_ota_index.py
+// and the flat "<device>": [ ... ] layout used by other OTA plugins.
+function index_map(index) {
+	const map = {};
+
+	if (type(index) != 'object')
+		return map;
+
+	let src = index;
+
+	if (type(index.devices) == 'object')
+		src = index.devices;
+
+	for (let key in src) {
+		const value = src[key];
+
+		if (type(value) == 'array') {
+			let best = null;
+
+			for (let i = 0; i < length(value); i++) {
+				const entry = normalize_entry(value[i]);
+
+				if (entry == null)
+					continue;
+
+				if (best == null || entry.build_date > best.build_date)
+					best = entry;
+			}
+
+			if (best != null)
+				map[key] = best;
+		}
+		else {
+			const entry = normalize_entry(value);
+
+			if (entry != null)
+				map[key] = entry;
+		}
+	}
+
+	return map;
+}
+
+function version_chunks(version) {
+	const chunks = [];
+	let cur = '';
+	let kind = -1;
+
+	for (let i = 0; i < length(version); i++) {
+		const ch = substr(version, i, 1);
+		const isdigit = (ch >= '0' && ch <= '9') ? 1 : 0;
+
+		if (kind == -1 || kind == isdigit) {
+			cur = cur + ch;
+			kind = isdigit;
+		}
+		else {
+			chunks[length(chunks)] = cur;
+			cur = ch;
+			kind = isdigit;
+		}
+	}
+
+	if (length(cur) > 0)
+		chunks[length(chunks)] = cur;
+
+	return chunks;
+}
+
+function version_cmp(a, b) {
+	const ca = version_chunks(a);
+	const cb = version_chunks(b);
+	const n = (length(ca) > length(cb)) ? length(ca) : length(cb);
+
+	for (let i = 0; i < n; i++) {
+		const va = (i < length(ca)) ? ca[i] : '0';
+		const vb = (i < length(cb)) ? cb[i] : '0';
+		const na = to_int(va, -1);
+		const nb = to_int(vb, -1);
+
+		if (na >= 0 && nb >= 0) {
+			if (na != nb)
+				return (na > nb) ? 1 : -1;
+		}
+		else {
+			const sa = lc(va);
+			const sb = lc(vb);
+
+			if (sa != sb)
+				return (sa > sb) ? 1 : -1;
+		}
+	}
+
+	return 0;
+}
+
+// true  -> remote is newer
+// false -> remote is the same or older
+// null  -> not comparable
+function is_newer(entry, local) {
+	if (entry.build_date > 0 && local.build_date > 0)
+		return (entry.build_date > local.build_date);
+
+	if (entry.version != '' && local.version != '')
+		return (version_cmp(entry.version, local.version) > 0);
+
+	return null;
+}
+
+/* ------------------------------------------------------------------ */
+/* network helpers                                                    */
+/* ------------------------------------------------------------------ */
+
+function http_cmd(url, out, timeout, cfg) {
+	if (command_exists('curl')) {
+		let cmd = 'curl -fsSL --connect-timeout 10 --max-time ' + S(timeout);
+
+		if (cfg.ipv4_only)
+			cmd = cmd + ' -4';
+
+		if (cfg.allow_insecure)
+			cmd = cmd + ' -k';
+
+		return cmd + ' -o ' + sh_quote(out) + ' ' + sh_quote(url);
+	}
+
+	if (command_exists('uclient-fetch')) {
+		let cmd = 'uclient-fetch -q -T ' + S(timeout);
+
+		if (cfg.allow_insecure)
+			cmd = cmd + ' --no-check-certificate';
+
+		return cmd + ' -O ' + sh_quote(out) + ' ' + sh_quote(url);
+	}
+
+	if (command_exists('wget')) {
+		let cmd = 'wget -q -T ' + S(timeout);
+
+		if (cfg.allow_insecure)
+			cmd = cmd + ' --no-check-certificate';
+
+		return cmd + ' -O ' + sh_quote(out) + ' ' + sh_quote(url);
+	}
+
+	return null;
+}
+
+function fetch_index(url, cfg) {
+	mkdir_p(RUN_DIR);
+
+	const tmp = RUN_DIR + '/index.download';
+
+	safe_unlink(tmp);
+
+	const cmd = http_cmd(url, tmp, 20, cfg);
+
+	if (cmd == null)
+		return { ok: false, code: 'no_downloader', msg: 'curl, uclient-fetch and wget are all missing' };
+
+	const res = run_capture(cmd);
+	const data = readfile(tmp);
+
+	safe_unlink(tmp);
+
+	if (data == null || length(trim(data)) == 0)
+		return { ok: false, code: 'network', msg: tail_lines(res.out, 3) };
+
+	return { ok: true, data: data };
+}
+
+/* ------------------------------------------------------------------ */
+/* commands                                                           */
+/* ------------------------------------------------------------------ */
+
+function do_status() {
+	mkdir_p(DL_DIR);
+
+	const chk = json_load(CHECK_CACHE);
+	const remote = (type(chk) == 'object' && type(chk.remote) == 'object') ? chk.remote : {};
+	const sha = S(remote.sha256);
+	const expected = to_int(remote.size, 0);
+
+	const out = {
+		state: 'idle',
+		received: 0,
+		total: expected,
+		sha256: sha,
+		version: S(remote.version),
+		msg: ''
+	};
+
+	const image = stat(IMAGE);
+	const verified = read_trim(VERIFIED);
+
+	if (image != null && sha != '' && verified != null && verified == sha) {
+		out.state = 'downloaded';
+		out.received = image.size;
+		out.total = (expected > 0) ? expected : image.size;
+		out.image_size = image.size;
+
+		return out;
+	}
+
+	const exit_code = read_trim(DL_EXIT);
+	const pid = read_trim(DL_PID);
+
+	if (process_alive(pid)) {
+		const part = stat(PART);
+
+		out.state = 'downloading';
+		out.received = (part != null) ? part.size : 0;
+		out.pid = to_int(pid, 0);
+
+		return out;
+	}
+
+	if (exit_code == null)
+		return out;
+
+	const code = to_int(exit_code, 255);
+
+	if (code == 0) {
+		out.state = 'failed';
+		out.msg = 'worker finished without a verified image';
+
+		return out;
+	}
+
+	if (code == 130) {
+		out.state = 'idle';
+		out.msg = 'canceled';
+
+		return out;
+	}
+
+	out.state = 'failed';
+
+	if (code == 3)
+		out.code = 'checksum';
+	else if (code == 4)
+		out.code = 'download';
+	else if (code == 5)
+		out.code = 'move';
+	else if (code == 6)
+		out.code = 'no_downloader';
+	else if (code == 7)
+		out.code = 'image_invalid';
+	else
+		out.code = 'unknown';
+
+	out.msg = tail_lines(readfile(DL_LOG), 4);
+
+	return out;
+}
+
+function do_info() {
+	const cfg = load_config();
+	const local = local_info();
+	const candidates = device_keys(cfg, local);
+
+	let device_key = local.device;
+
+	if (device_key == '')
+		device_key = local.model;
+
+	if (device_key == '')
+		device_key = local.board;
+
+	return {
+		ok: true,
+		plugin_version: PLUGIN_VERSION,
+		local: local,
+		config: {
+			api_url: cfg.api_url,
+			device: cfg.device,
+			auto_check: cfg.auto_check ? 1 : 0,
+			keep_settings: cfg.keep_settings ? 1 : 0,
+			verify_image: cfg.verify_image ? 1 : 0,
+			ipv4_only: cfg.ipv4_only ? 1 : 0,
+			allow_insecure: cfg.allow_insecure ? 1 : 0
+		},
+		keys: candidates,
+		device_key: (device_key != '') ? device_key : ((length(candidates) > 0) ? candidates[0] : 'unknown'),
+		check: json_load(CHECK_CACHE),
+		status: do_status(),
+		tools: {
+			curl: command_exists('curl'),
+			uclient_fetch: command_exists('uclient-fetch'),
+			sysupgrade: (stat(SYSUPGRADE) != null),
+			sha256sum: command_exists('sha256sum')
+		}
+	};
+}
+
+function do_check() {
+	const cfg = load_config();
+
+	if (cfg.api_url == '')
+		return { ok: false, code: 'no_api', msg: 'no update index URL configured' };
+
+	if (substr(lc(cfg.api_url), 0, 5) != 'https' && !cfg.allow_insecure)
+		return { ok: false, code: 'insecure_url', msg: 'index URL is not https' };
+
+	const fetched = fetch_index(cfg.api_url, cfg);
+
+	if (!fetched.ok)
+		return { ok: false, code: fetched.code, msg: fetched.msg, url: cfg.api_url };
+
+	let payload = null;
+
+	try {
+		payload = json(fetched.data);
+	}
+	catch (e) {
+		return { ok: false, code: 'bad_json', msg: S(e), url: cfg.api_url };
+	}
+
+	mkdir_p(RUN_DIR);
+	safe_write(INDEX_CACHE, fetched.data);
+
+	const map = index_map(payload);
+	const local = local_info();
+	const candidates = device_keys(cfg, local);
+
+	let entry = null;
+	let matched = '';
+
+	for (let i = 0; i < length(candidates); i++) {
+		if (map[candidates[i]] != null) {
+			entry = map[candidates[i]];
+			matched = candidates[i];
+			break;
+		}
+	}
+
+	if (entry == null) {
+		return {
+			ok: false,
+			code: 'no_device',
+			msg: 'no firmware for this device in the index',
+			device: (local.device != '') ? local.device : or_str(local.board, 'unknown'),
+			keys: candidates,
+			available: keys(map)
+		};
+	}
+
+	const newer = is_newer(entry, local);
+
+	const check = {
+		checked_at: time(),
+		index_url: cfg.api_url,
+		matched_key: matched,
+		newer: newer,
+		local: local,
+		remote: entry,
+		device: (local.device != '') ? local.device : matched
+	};
+
+	json_store(CHECK_CACHE, check);
+
+	if (newer == null)
+		return {
+			ok: false,
+			code: 'unknown_version',
+			msg: 'neither build date nor version can be compared',
+			check: check
+		};
+
+	return { ok: true, check: check };
+}
+
+function do_download() {
+	const chk = json_load(CHECK_CACHE);
+
+	if (type(chk) != 'object' || type(chk.remote) != 'object')
+		return { ok: false, code: 'not_checked', msg: 'run a check first' };
+
+	const remote = chk.remote;
+	const sha = S(remote.sha256);
+
+	if (sha == '')
+		return { ok: false, code: 'no_sha256', msg: 'index entry has no sha256 checksum' };
+
+	if (S(remote.url) == '')
+		return { ok: false, code: 'bad_json', msg: 'index entry has no url' };
+
+	const current = do_status();
+
+	if (current.state == 'downloading')
+		return { ok: true, status: current };
+
+	if (stat(WORKER) == null)
+		return { ok: false, code: 'no_downloader', msg: 'missing ' + WORKER };
+
+	mkdir_p(DL_DIR);
+
+	const size = to_int(remote.size, 0);
+
+	if (size > 0) {
+		const vfs = statvfs(DL_DIR);
+
+		if (vfs != null && to_int(vfs.freesize, 0) > 0) {
+			const need = size + 8 * 1024 * 1024;
+
+			if (vfs.freesize < need)
+				return {
+					ok: false,
+					code: 'no_space',
+					msg: 'need ' + S(need) + ' bytes, ' + S(vfs.freesize) + ' available'
+				};
+		}
+	}
+
+	// Start from a clean slate; a leftover part file could belong to another
+	// image than the one recorded in the check cache.
+	safe_unlink(IMAGE);
+	safe_unlink(PART);
+	safe_unlink(VERIFIED);
+	safe_unlink(DL_EXIT);
+	safe_unlink(DL_PID);
+	safe_unlink(DL_LOG);
+
+	const cfg = load_config();
+	const args = [
+		sh_quote(remote.url),
+		sh_quote(PART),
+		sh_quote(IMAGE),
+		sh_quote(sha),
+		S(size),
+		cfg.ipv4_only ? '1' : '0',
+		cfg.allow_insecure ? '1' : '0',
+		cfg.verify_image ? '1' : '0'
+	];
+
+	const started = run_detached(
+		WORKER + ' ' + join(' ', args) + ' >>' + sh_quote(DL_LOG) + ' 2>&1 </dev/null & echo $! > ' + sh_quote(DL_PID)
+	);
+
+	if (!started)
+		return { ok: false, code: 'download', msg: 'failed to spawn the download worker' };
+
+	// Give the worker a moment to create its pid file, so that the caller
+	// immediately sees the "downloading" state.
+	for (let i = 0; i < 30; i++) {
+		if (read_trim(DL_PID) != null || read_trim(DL_EXIT) != null)
+			break;
+
+		sleep(20000);
+	}
+
+	return { ok: true, status: do_status() };
+}
+
+function do_cancel() {
+	const pid = read_trim(DL_PID);
+
+	if (process_alive(pid)) {
+		const p = to_int(pid, 0);
+
+		run_capture('kill -TERM ' + S(p));
+
+		for (let i = 0; i < 25; i++) {
+			if (!process_alive(pid))
+				break;
+
+			sleep(100000);
+		}
+
+		if (process_alive(pid))
+			run_capture('kill -KILL ' + S(p));
+	}
+
+	safe_unlink(PART);
+	safe_unlink(DL_EXIT);
+	safe_unlink(DL_PID);
+	safe_unlink(DL_LOG);
+	safe_unlink(VERIFIED);
+	safe_unlink(IMAGE);
+
+	return { ok: true, status: do_status() };
+}
+
+function do_apply(keep) {
+	const chk = json_load(CHECK_CACHE);
+
+	if (type(chk) != 'object' || type(chk.remote) != 'object')
+		return { ok: false, code: 'not_checked', msg: 'run a check first' };
+
+	const status = do_status();
+
+	if (status.state != 'downloaded')
+		return { ok: false, code: 'not_downloaded', msg: 'firmware is not downloaded' };
+
+	if (stat(SYSUPGRADE) == null)
+		return { ok: false, code: 'no_sysupgrade', msg: 'sysupgrade is not available' };
+
+	mkdir_p(DL_DIR);
+
+	const keep_flag = flag_on(keep) ? '' : '-n';
+
+	run_detached(
+		'sleep 2; ' + SYSUPGRADE + ' ' + keep_flag + ' ' + sh_quote(IMAGE) +
+		' >' + sh_quote(SU_LOG) + ' 2>&1'
+	);
+
+	return { ok: true, keep: flag_on(keep) ? 1 : 0 };
+}
+
+function usage() {
+	print('luci-app-ota ' + PLUGIN_VERSION + '\n');
+	print('\n');
+	print('usage: ota <command>\n');
+	print('\n');
+	print('commands:\n');
+	print('  info                local firmware information and cached state\n');
+	print('  check               fetch the update index and compare versions\n');
+	print('  download            start downloading the available firmware\n');
+	print('  status              report download state and progress\n');
+	print('  cancel              cancel a running download\n');
+	print('  apply --keep <0|1>  flash the downloaded firmware with sysupgrade\n');
+	print('\n');
+	print('Every command prints a JSON object on stdout.\n');
+}
+
+/* ------------------------------------------------------------------ */
+/* entry point                                                        */
+/* ------------------------------------------------------------------ */
+
+function arg_value(name, def) {
+	for (let i = 1; i < length(ARGV); i++)
+		if (ARGV[i] == '--' + name && i + 1 < length(ARGV))
+			return ARGV[i + 1];
+
+	return def;
+}
+
+const command = (length(ARGV) > 0) ? ARGV[0] : 'help';
+
+if (command == 'help' || command == '--help' || command == '-h') {
+	usage();
+	exit(0);
+}
+
+let result = null;
+
+if (command == 'info')
+	result = do_info();
+else if (command == 'check')
+	result = do_check();
+else if (command == 'status')
+	result = { ok: true, status: do_status() };
+else if (command == 'download')
+	result = do_download();
+else if (command == 'cancel')
+	result = do_cancel();
+else if (command == 'apply')
+	result = do_apply(arg_value('keep', '1'));
+else {
+	usage();
+	exit(2);
+}
+
+printf('%J\n', result);
+
+exit((result != null && result.ok) ? 0 : 1);

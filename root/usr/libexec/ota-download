@@ -1,0 +1,213 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+#
+# luci-app-ota download worker.
+#
+# Started in the background by /usr/bin/ota. It downloads the image, verifies
+# the SHA256 checksum and only then atomically moves it in place. Progress is
+# derived from the growing file size by the caller, so the worker does not
+# need to parse any progress output.
+#
+# usage: ota-download <url> <part> <image> <sha256> <size> <ipv4_only> <insecure> <verify_image>
+#
+# Exit codes (written to download.exit and interpreted by /usr/bin/ota):
+#   0    downloaded, checksum verified, image moved in place
+#   3    checksum mismatch
+#   4    download failed
+#   5    could not move the image into place
+#   6    no downloader available
+#   7    sysupgrade rejected the image
+#   130  canceled
+
+set -u
+
+URL="${1:-}"
+PART="${2:-}"
+IMAGE="${3:-}"
+SHA="${4:-}"
+SIZE="${5:-0}"
+IPV4="${6:-0}"
+INSECURE="${7:-0}"
+VERIFY="${8:-0}"
+
+if [ -z "$URL" ] || [ -z "$PART" ] || [ -z "$IMAGE" ]; then
+	exit 4
+fi
+
+DL_DIR=$(dirname "$PART")
+LOG="$DL_DIR/download.log"
+EXIT_FILE="$DL_DIR/download.exit"
+PID_FILE="$DL_DIR/download.pid"
+VERIFIED="$DL_DIR/firmware.verified"
+
+CHILD=""
+
+echo $$ > "$PID_FILE"
+
+log() {
+	echo "$(date +'%Y-%m-%d %H:%M:%S') $*" >> "$LOG"
+}
+
+finish() {
+	echo "$1" > "$EXIT_FILE"
+	rm -f "$PID_FILE"
+	exit "$1"
+}
+
+cleanup() {
+	if [ -n "$CHILD" ]; then
+		kill -TERM "$CHILD" 2>/dev/null
+		sleep 1
+		kill -KILL "$CHILD" 2>/dev/null
+	fi
+
+	rm -f "$PART"
+	log "canceled by user"
+	finish 130
+}
+
+trap cleanup TERM INT
+
+log "worker $$ started for $URL"
+
+BASE_OPTS="--connect-timeout 15 --retry 3 --retry-delay 2 --speed-limit 1024 --speed-time 120"
+if [ "$IPV4" = "1" ]; then
+	BASE_OPTS="$BASE_OPTS -4"
+fi
+if [ "$INSECURE" = "1" ]; then
+	BASE_OPTS="$BASE_OPTS -k"
+fi
+
+fetch_curl() {
+	# $1 is the optional resume flag
+	exec curl -fL $BASE_OPTS $1 -o "$PART" "$URL"
+}
+
+fetch_uclient() {
+	exec uclient-fetch -T 30 -O "$PART" "$URL"
+}
+
+fetch_wget() {
+	exec wget -T 30 -O "$PART" "$URL"
+}
+
+have_curl=no
+have_uclient=no
+have_wget=no
+
+command -v curl >/dev/null 2>&1 && have_curl=yes
+command -v uclient-fetch >/dev/null 2>&1 && have_uclient=yes
+command -v wget >/dev/null 2>&1 && have_wget=yes
+
+if [ "$have_curl" = "no" ] && [ "$have_uclient" = "no" ] && [ "$have_wget" = "no" ]; then
+	log "no downloader (curl, uclient-fetch, wget) available"
+	finish 6
+fi
+
+rc=1
+attempt=1
+
+while [ "$attempt" -le 2 ]; do
+	resume=""
+
+	# curl can resume an interrupted transfer; the other tools cannot.
+	if [ "$have_curl" = "yes" ] && [ -s "$PART" ]; then
+		resume="-C -"
+	fi
+
+	if [ "$have_curl" = "yes" ]; then
+		fetch_curl "$resume" >> "$LOG" 2>&1 &
+	elif [ "$have_uclient" = "yes" ]; then
+		fetch_uclient >> "$LOG" 2>&1 &
+	else
+		fetch_wget >> "$LOG" 2>&1 &
+	fi
+
+	CHILD=$!
+	wait "$CHILD"
+	rc=$?
+	CHILD=""
+
+	if [ "$rc" -eq 0 ]; then
+		break
+	fi
+
+	if [ -n "$resume" ]; then
+		log "resume attempt failed (rc=$rc), restarting from scratch"
+		rm -f "$PART"
+	fi
+
+	attempt=$((attempt + 1))
+done
+
+if [ "$rc" -ne 0 ]; then
+	log "download failed (rc=$rc)"
+	rm -f "$PART"
+	finish 4
+fi
+
+if [ ! -s "$PART" ]; then
+	log "downloaded file is empty"
+	finish 4
+fi
+
+if [ "$SIZE" != "0" ]; then
+	actual=$(wc -c < "$PART" 2>/dev/null | tr -d ' \n')
+
+	if [ "$actual" != "$SIZE" ]; then
+		log "size mismatch: got ${actual:-0} bytes, expected $SIZE"
+		rm -f "$PART"
+		finish 4
+	fi
+fi
+
+if [ -z "$SHA" ]; then
+	log "no checksum given, refusing to accept the image"
+	rm -f "$PART"
+	finish 3
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+	actual_sha=$(sha256sum "$PART" | cut -d' ' -f1)
+elif command -v openssl >/dev/null 2>&1; then
+	actual_sha=$(openssl dgst -sha256 "$PART" | sed 's/.*= *//')
+else
+	log "no sha256 tool available"
+	rm -f "$PART"
+	finish 3
+fi
+
+log "checksum ${actual_sha:-none}"
+
+if [ "$(echo "$actual_sha" | tr 'A-Z' 'a-z')" != "$(echo "$SHA" | tr 'A-Z' 'a-z')" ]; then
+	log "checksum mismatch, image discarded"
+	rm -f "$PART"
+	finish 3
+fi
+
+if ! mv -f "$PART" "$IMAGE"; then
+	log "could not move the image into place"
+	finish 5
+fi
+
+# Let sysupgrade validate the image metadata (board, format) before we tell
+# the user that the firmware is ready. "-T" only performs the checks and
+# returns before anything is written to flash.
+if [ "$VERIFY" = "1" ]; then
+	if [ -x /sbin/sysupgrade ]; then
+		log "testing image with sysupgrade -T"
+		if /sbin/sysupgrade -T "$IMAGE" >> "$LOG" 2>&1; then
+			log "image test passed"
+		else
+			log "image test failed, image discarded"
+			rm -f "$IMAGE"
+			finish 7
+		fi
+	else
+		log "sysupgrade not available, skipping image test"
+	fi
+fi
+
+echo "$SHA" > "$VERIFIED"
+log "download completed and verified"
+finish 0

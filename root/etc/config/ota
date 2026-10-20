@@ -1,0 +1,21 @@
+config ota 'config'
+	# URL of the JSON update index (must be https unless allow_insecure is set)
+	option api_url 'https://raw.githubusercontent.com/MinimaxFlora/ZeroWrt/ota/ota.json'
+
+	# Optional manual device key. Leave empty to detect it automatically.
+	option device ''
+
+	# Check for updates automatically when the page is opened
+	option auto_check '1'
+
+	# Default state of "keep settings" on the install step
+	option keep_settings '1'
+
+	# Let sysupgrade validate the image metadata before flashing
+	option verify_image '1'
+
+	# Use IPv4 only for index/download requests (helps on broken IPv6 setups)
+	option ipv4_only '1'
+
+	# Allow plain http:// index and download URLs and skip TLS verification
+	option allow_insecure '0'
