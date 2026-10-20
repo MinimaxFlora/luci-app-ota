@@ -570,8 +570,8 @@ return view.extend({
 		const rows = [
 			[ _('Installed version'), local.version || '—' ],
 			[ _('Available version'), remote.version || '—' ],
-			[ _('Installed build'), fmtDate(local.build_date) ],
-			[ _('Available build'), fmtDate(remote.build_date) ],
+			[ _('Installed build'), buildDateCell(local) ],
+			[ _('Available build'), buildDateCell(remote) ],
 			[ _('Size'), remote.size ? fmtBytes(remote.size) : '—' ],
 			[ _('File'), remote.file || _('unknown') ],
 			[ _('SHA256'), E('span', { 'class': 'ota-mono' }, remote.sha256 || '—') ]
