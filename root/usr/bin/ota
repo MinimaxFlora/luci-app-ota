@@ -496,15 +496,17 @@ function device_keys(cfg, local) {
 	if (local != null && local.model != '')
 		add_key(keys, seen, local.model);
 
-	if (local != null)
-		add_key(keys, seen, local.board);
-
+	// Prefer the concrete board over the target: "ruijie,rg-x60-new" must win
+	// over "mediatek/filogic", otherwise a target wide entry could match.
 	add_key(keys, seen, read_trim('/tmp/sysinfo/board_name'));
 
 	const board = json_load('/etc/board.json');
 
 	if (type(board) == 'object' && board.model != null && board.model.id != null)
 		add_key(keys, seen, board.model.id);
+
+	if (local != null)
+		add_key(keys, seen, local.board);
 
 	if (local != null) {
 		add_key(keys, seen, vendor_device_key(local.device));
@@ -821,6 +823,9 @@ function do_info() {
 
 	if (device_key == '')
 		device_key = local.model;
+
+	if (device_key == '')
+		device_key = or_str(read_trim('/tmp/sysinfo/board_name'), '');
 
 	if (device_key == '')
 		device_key = local.board;
