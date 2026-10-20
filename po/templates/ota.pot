@@ -438,3 +438,62 @@ msgstr ""
 #: htdocs/luci-static/resources/view/ota/overview.js
 msgid "Keys in the index: %s"
 msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Speed"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Remaining"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "verifying…"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "(from version)"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "not recorded"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "This firmware does not record a build timestamp, the date is derived from the version string."
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "The device will be flashed and rebooted. This takes a few minutes."
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "kept"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "erased"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Do not power off the device."
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "The page reconnects automatically once it is back."
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Writing the system partition"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Verifying the image"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Rebooting the device"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Reconnecting to the web interface"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Elapsed"
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Usually takes 1-3 minutes."
+msgstr ""
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "If the page does not come back, open %s manually."
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js
+msgid "Installing firmware"
+msgstr ""

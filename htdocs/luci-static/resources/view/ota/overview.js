@@ -44,6 +44,10 @@ const callApply = rpc.declare({
 /* formatting helpers                                                  */
 /* ------------------------------------------------------------------ */
 
+function str(value) {
+	return (value == null) ? '' : String(value);
+}
+
 function fmtDate(ts) {
 	if (!ts)
 		return '—';
@@ -85,6 +89,39 @@ function fmtDuration(seconds) {
 		return hours + ':' + String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
 
 	return minutes + ':' + String(secs).padStart(2, '0');
+}
+
+function dateFromVersion(version) {
+	var match = /^(\d{4})(\d{2})(\d{2})$/.exec(str(version));
+
+	if (match)
+		return match[1] + '-' + match[2] + '-' + match[3];
+
+	return null;
+}
+
+/* Build date cell. Some firmwares (LEDE style trees that leave
+ * OPENWRT_BUILD_DATE as "%B") do not record a timestamp; in that case we say
+ * so instead of showing a misleading dash, and fall back to a date encoded in
+ * the version string when there is one. */
+function buildDateCell(entry) {
+	if (entry && entry.build_date > 0)
+		return fmtDate(entry.build_date);
+
+	var derived = dateFromVersion(entry && entry.version);
+
+	if (derived) {
+		return E('span', {}, [
+			derived,
+			' ',
+			E('span', {
+				'class': 'ota-hint',
+				'title': _('This firmware does not record a build timestamp, the date is derived from the version string.')
+			}, _('(from version)'))
+		]);
+	}
+
+	return E('span', { 'class': 'ota-hint' }, _('not recorded'));
 }
 
 function escapeHtml(text) {
@@ -348,8 +385,9 @@ return view.extend({
 	renderStyle: function() {
 		return E('style', {}, [
 			'.ota-table { width: 100%; border-collapse: collapse; }',
-			'.ota-table td { padding: .25em .5em; vertical-align: top; }',
-			'.ota-table td.ota-key { width: 33%; color: #666; white-space: nowrap; }',
+			'.ota-table td { padding: .4em .5em; vertical-align: top; }',
+			'.ota-table td.ota-key { width: 34%; color: #666; white-space: nowrap; }',
+			'.ota-hint { color: #8a8a8a; font-size: 92%; }',
 			'.ota-changelog { border: 1px solid rgba(128,128,128,.35); border-radius: 6px; padding: .25em 1em; margin: .5em 0; max-height: 26em; overflow-y: auto; }',
 			'.ota-changelog h3, .ota-changelog h4, .ota-changelog h5 { margin: .8em 0 .3em; }',
 			'.ota-changelog p { margin: .35em 0; }',
@@ -363,8 +401,71 @@ return view.extend({
 			'.ota-ok { color: #2e7d32; }',
 			'.ota-warn { color: #ef6c00; }',
 			'.ota-mono { font-family: monospace; word-break: break-all; }',
-			'.ota-actions { margin-top: .75em; display: flex; gap: .5em; flex-wrap: wrap; }',
-			'.ota-muted { color: #666; font-size: 95%; }'
+			'.ota-actions { margin-top: .9em; display: flex; gap: .5em; flex-wrap: wrap; }',
+			'.ota-muted { color: #666; font-size: 95%; }',
+
+			/* keep-settings row: aligned with the table columns */
+			'.ota-option { display: flex; align-items: center; gap: .6em; padding: .75em .5em .25em 1.1em; }',
+			'.ota-option input[type="checkbox"] { margin: 0; flex: none; }',
+			'.ota-option label { margin: 0; cursor: pointer; }',
+
+			/* progress bar */
+			'.ota-progress { margin: .5em 0 1.1em; }',
+			'.ota-track { position: relative; height: 18px; border-radius: 999px; background: rgba(128,128,128,.16); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.10); }',
+			'.ota-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px;' +
+				' background-image: linear-gradient(90deg, #2e9d72, #3fbb8b 45%, #6fd3a8); background-size: 200% 100%;' +
+				' transition: width .35s cubic-bezier(.4,0,.2,1); animation: otaFlow 3s linear infinite; }',
+			'.ota-fill::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%);' +
+				' background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);' +
+				' animation: otaSheen 1.8s ease-in-out infinite; }',
+			'@keyframes otaFlow { to { background-position: 200% 0; } }',
+			'@keyframes otaSheen { 55%, 100% { transform: translateX(120%); } }',
+			'.ota-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;' +
+				' font-size: 11px; font-weight: 700; letter-spacing: .02em; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); }',
+			'.ota-progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1em;' +
+				' margin-bottom: .5em; color: #666; font-size: 94%; }',
+			'.ota-pct-text { font-weight: 700; color: #2e9d72; font-variant-numeric: tabular-nums; }',
+			'.ota-stats { display: flex; flex-wrap: wrap; gap: .35em 1.6em; color: #666; font-size: 94%; }',
+			'.ota-stats b { font-weight: 600; }',
+
+			/* install confirmation */
+			'.ota-confirm-head { text-align: center; margin-bottom: 6px; }',
+			'.ota-confirm-icon { width: 54px; height: 54px; margin: 0 auto 10px; border-radius: 50%; display: flex;' +
+				' align-items: center; justify-content: center; font-size: 26px; font-weight: 700;' +
+				' background: rgba(239,108,0,.14); color: #ef6c00; }',
+			'.ota-kv { display: grid; grid-template-columns: auto 1fr; gap: .35em 1em; margin: 14px 0 4px; font-size: 14px; text-align: left; }',
+			'.ota-kv dt { color: #888; white-space: nowrap; }',
+			'.ota-kv dd { margin: 0; word-break: break-all; }',
+
+			/* full screen flashing overlay */
+			'.ota-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center;' +
+				' justify-content: center; padding: 24px; background: rgba(8,16,12,.74);' +
+				' -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: otaFade .25s ease; }',
+			'@keyframes otaFade { from { opacity: 0; } }',
+			'.ota-overlay-card { width: min(540px, 100%); padding: 34px 32px 26px; border-radius: 18px; text-align: center;' +
+				' color: #f3f8f5; background: rgba(20,29,24,.94); border: 1px solid rgba(255,255,255,.12);' +
+				' box-shadow: 0 28px 70px rgba(0,0,0,.5); }',
+			'.ota-ring { width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%;' +
+				' border: 6px solid rgba(255,255,255,.14); border-top-color: #6fd3a8; border-right-color: #3fbb8b;' +
+				' animation: otaSpin 1s linear infinite; }',
+			'@keyframes otaSpin { to { transform: rotate(360deg); } }',
+			'.ota-overlay-card h2 { margin: 0 0 6px; padding: 0; font-size: 1.35rem; color: #fff;' +
+				' background: none; border: 0; box-shadow: none; }',
+			'.ota-overlay-sub { margin: 0; color: rgba(255,255,255,.7); font-size: 14px; }',
+			'.ota-steps { list-style: none; margin: 20px 0 0; padding: 0; text-align: left; font-size: 14px; }',
+			'.ota-steps li { position: relative; padding: .38em 0 .38em 1.9em; color: rgba(255,255,255,.55); }',
+			'.ota-steps li::before { content: ""; position: absolute; left: .35em; top: .95em; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.22); }',
+			'.ota-steps li.done { color: rgba(255,255,255,.9); }',
+			'.ota-steps li.done::before { background: #6fd3a8; }',
+			'.ota-steps li.active { color: #fff; }',
+			'.ota-steps li.active::before { background: #6fd3a8; box-shadow: 0 0 0 4px rgba(111,211,168,.22); animation: otaPulse 1.5s ease-in-out infinite; }',
+			'@keyframes otaPulse { 50% { box-shadow: 0 0 0 9px rgba(111,211,168,.04); } }',
+			'.ota-overlay-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1);' +
+				' color: rgba(255,255,255,.55); font-size: 12.5px; }',
+			'.ota-overlay-foot b { color: rgba(255,255,255,.85); font-weight: 600; }',
+			'.ota-danger { color: #ffb4a2; }',
+			'body.ota-flashing { overflow: hidden; }',
+			'@media (prefers-reduced-motion: reduce) { .ota-ring, .ota-fill, .ota-fill::after, .ota-steps li.active::before { animation: none; } }'
 		].join('\n'));
 	},
 
@@ -373,9 +474,9 @@ return view.extend({
 		const config = (this.info && this.info.config) ? this.info.config : {};
 
 		const rows = [
-			[ _('Model'), local.product || local.board || '—' ],
+			[ _('Model'), local.model_name || local.board_name || local.board || '—' ],
 			[ _('Firmware version'), local.version || local.version_id || '—' ],
-			[ _('Build date'), fmtDate(local.build_date) ],
+			[ _('Build date'), buildDateCell(local) ],
 			[ _('Target'), local.target || local.board || '—' ],
 			[ _('Architecture'), local.arch || '—' ],
 			[ _('Device key'), (this.info && this.info.device_key) ? this.info.device_key : '—' ],
@@ -511,14 +612,23 @@ return view.extend({
 
 	renderDownloading: function(status) {
 		this.progressRefs = {
-			bar: E('div', { 'class': 'cbi-progressbar', 'title': '0%' }),
-			info: E('p', { 'class': 'ota-muted' }, _('Starting download…'))
+			fill: E('div', { 'class': 'ota-fill' }),
+			pct: E('span', { 'class': 'ota-pct-text' }, '0%'),
+			size: E('span', {}, _('Starting download…')),
+			speed: E('span', {}),
+			eta: E('span', {})
 		};
 
 		const card = E('div', { 'class': 'cbi-section' }, [
 			E('h3', {}, _('Downloading firmware')),
-			this.progressRefs.bar,
-			this.progressRefs.info,
+			E('div', { 'class': 'ota-progress' }, [
+				E('div', { 'class': 'ota-progress-head' }, [ this.progressRefs.size, this.progressRefs.pct ]),
+				E('div', { 'class': 'ota-track' }, [ this.progressRefs.fill ]),
+				E('div', { 'class': 'ota-stats', 'style': 'margin-top:.6em' }, [
+					E('span', {}, [ _('Speed') + ': ', this.progressRefs.speed ]),
+					E('span', {}, [ _('Remaining') + ': ', this.progressRefs.eta ])
+				])
+			]),
 			E('div', { 'class': 'ota-actions' }, [
 				E('button', {
 					'class': 'cbi-button cbi-button-reset',
@@ -540,29 +650,26 @@ return view.extend({
 		const total = status.total || 0;
 		const pct = (total > 0) ? Math.max(0, Math.min(100, (received / total) * 100)) : null;
 
-		const bar = this.progressRefs.bar;
+		const refs = this.progressRefs;
 
-		bar.setAttribute('title', pct != null ? pct.toFixed(1) + '%' : fmtBytes(received));
-		setChildren(bar, [ E('div', { 'style': 'width:' + (pct != null ? pct.toFixed(1) : '100') + '%' }) ]);
-
-		let text;
-
-		if (pct != null)
-			text = fmtBytes(received) + ' / ' + fmtBytes(total) + ' (' + pct.toFixed(1) + '%)';
-		else
-			text = fmtBytes(received);
+		refs.fill.style.width = (pct != null ? pct : 100) + '%';
+		refs.pct.textContent = pct != null ? pct.toFixed(pct < 10 ? 1 : 0) + '%' : fmtBytes(received);
+		refs.size.textContent = pct != null
+			? fmtBytes(received) + ' / ' + fmtBytes(total)
+			: fmtBytes(received);
 
 		if (this.speed > 0) {
-			text += ' · ' + fmtBytes(this.speed) + '/s';
+			refs.speed.textContent = fmtBytes(this.speed) + '/s';
 
 			if (total > 0 && received < total)
-				text += ' · ' + _('about %s left').format(fmtDuration((total - received) / this.speed));
+				refs.eta.textContent = fmtDuration((total - received) / this.speed);
+			else
+				refs.eta.textContent = _('verifying…');
 		}
 		else {
-			text += ' · ' + _('downloading…');
+			refs.speed.textContent = '—';
+			refs.eta.textContent = _('downloading…');
 		}
-
-		this.progressRefs.info.textContent = text;
 	},
 
 	renderDownloaded: function(status) {
@@ -597,10 +704,9 @@ return view.extend({
 					])
 				])
 			]),
-			E('label', { 'class': 'cbi-input-checkbox', 'style': 'display:block;margin:.75em 0;' }, [
+			E('div', { 'class': 'ota-option' }, [
 				keep,
-				' ',
-				_('Keep settings and retain the current configuration')
+				E('label', { 'for': 'ota-keep' }, _('Keep settings and retain the current configuration'))
 			]),
 			E('div', { 'class': 'ota-actions' }, [
 				E('button', {
@@ -732,20 +838,24 @@ return view.extend({
 		const remote = (this.check && this.check.remote) ? this.check.remote : {};
 
 		ui.showModal(_('Install firmware'), [
-			E('p', {}, _('Firmware version %s will be written to the device.').format(remote.version || '—')),
-			E('ul', {}, [
-				E('li', {}, keep ? _('The current configuration will be kept.') : _('The current configuration will be erased.')),
-				E('li', {}, _('The device reboots automatically, do not power it off during the process.')),
-				E('li', {}, _('The update takes a few minutes. The network may be unreachable during that time.'))
+			E('div', { 'class': 'ota-confirm-head' }, [
+				E('div', { 'class': 'ota-confirm-icon' }, '!'),
+				E('p', { 'class': 'ota-muted' }, _('The device will be flashed and rebooted. This takes a few minutes.'))
 			]),
-			E('div', { 'class': 'right' }, [
+			E('dl', { 'class': 'ota-kv' }, [
+				E('dt', {}, _('Version')),
+				E('dd', {}, remote.version || '—'),
+				E('dt', {}, _('Size')),
+				E('dd', {}, fmtBytes(remote.size)),
+				E('dt', {}, _('Build date')),
+				E('dd', {}, buildDateCell(remote)),
+				E('dt', {}, _('Configuration')),
+				E('dd', {}, keep ? _('kept') : _('erased'))
+			]),
+			E('div', { 'class': 'ota-actions', 'style': 'justify-content:flex-end' }, [
+				E('button', { 'class': 'cbi-button', 'click': ui.hideModal }, _('Cancel')),
 				E('button', {
-					'class': 'cbi-button',
-					'click': ui.hideModal
-				}, _('Cancel')),
-				' ',
-				E('button', {
-					'class': 'cbi-button cbi-button-negative important',
+					'class': 'cbi-button cbi-button-apply important',
 					'click': ui.createHandlerFn(this, () => {
 						ui.hideModal();
 						this.startInstall(keep);
@@ -781,42 +891,93 @@ return view.extend({
 	},
 
 	showFlashing: function() {
-		const status = E('p', { 'class': 'spinning' }, _('Writing firmware, the device will reboot…'));
+		const steps = {
+			write: E('li', {}, _('Writing the system partition')),
+			verify: E('li', {}, _('Verifying the image')),
+			reboot: E('li', {}, _('Rebooting the device')),
+			reconnect: E('li', {}, _('Reconnecting to the web interface'))
+		};
+		const order = [ 'write', 'verify', 'reboot', 'reconnect' ];
 
-		ui.showModal(_('Installing firmware'), [
-			status,
-			E('p', {}, _('Do not power off the device and do not close the browser.')),
-			E('p', { 'class': 'ota-muted' }, _('The page reconnects automatically once the device is back.'))
-		], '');
+		const elapsed = E('b', {}, '0:00');
+		const card = E('div', { 'class': 'ota-overlay-card' }, [
+			E('div', { 'class': 'ota-ring' }),
+			E('h2', {}, _('Installing firmware')),
+			E('p', { 'class': 'ota-overlay-sub' }, [
+				E('span', { 'class': 'ota-danger' }, _('Do not power off the device.')),
+				' ',
+				_('The page reconnects automatically once it is back.')
+			]),
+			E('ol', { 'class': 'ota-steps' }, order.map((key) => steps[key])),
+			E('p', { 'class': 'ota-overlay-foot' }, [
+				_('Elapsed') + ' ',
+				elapsed,
+				' · ',
+				_('Usually takes 1-3 minutes.')
+			])
+		]);
+
+		document.body.classList.add('ota-flashing');
+		document.body.appendChild(E('div', { 'class': 'ota-overlay' }, card));
+
+		const setPhase = (index) => {
+			order.forEach((key, i) => {
+				steps[key].className = (i < index) ? 'done' : (i === index ? 'active' : '');
+			});
+		};
+
+		setPhase(0);
 
 		let waited = 0;
 
-		const tick = () => {
-			waited += 5;
+		const timer = window.setInterval(() => {
+			waited++;
+			elapsed.textContent = fmtDuration(waited);
 
-			if (waited < 120) {
-				status.textContent = _('Waiting for the device to reboot…') + ' (' + waited + 's)';
-				window.setTimeout(tick, 5000);
-				return;
+			if (waited === 20)
+				setPhase(1);
+			else if (waited === 40)
+				setPhase(2);
+			else if (waited === 55)
+				setPhase(3);
+			else if (waited === 65) {
+				window.clearInterval(timer);
+				this.waitForDevice(steps.reconnect, card);
 			}
-
-			this.waitForDevice();
-		};
-
-		window.setTimeout(tick, 5000);
+		}, 1000);
 	},
 
-	waitForDevice: function() {
+	/* Wait for the device to go away and come back, then reload the page.
+	 * Waiting for the "away" phase first avoids reloading while the old
+	 * system is still answering. */
+	waitForDevice: function(stepNode, card) {
 		const target = window.location.protocol + '//' + window.location.host;
+		const url = target + L.url('admin/system/ota/overview');
+		const hint = E('p', { 'class': 'ota-overlay-foot' }, _('If the page does not come back, open %s manually.').format(url));
+
+		if (card)
+			card.appendChild(hint);
+
+		let wentDown = false;
+
 		const probe = () => {
 			const img = new Image();
 
 			img.onload = () => {
-				window.location.replace(target + L.url('admin/system/ota/overview'));
+				if (!wentDown) {
+					window.setTimeout(probe, 3000);
+					return;
+				}
+
+				if (stepNode)
+					stepNode.className = 'done';
+
+				window.location.replace(url);
 			};
 
 			img.onerror = () => {
-				window.setTimeout(probe, 5000);
+				wentDown = true;
+				window.setTimeout(probe, 3000);
 			};
 
 			img.src = target + L.resource('icons/loading.svg') + '?t=' + Date.now();

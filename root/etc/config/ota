@@ -1,6 +1,8 @@
 config ota 'config'
-	# URL of the JSON update index (must be https unless allow_insecure is set)
-	option api_url 'https://minimaxflora.github.io/ZeroWrt/ota.json'
+	# URL of the JSON update index. Empty by default: the firmware build (or
+	# the user) has to point this at its own index, https unless
+	# allow_insecure is enabled.
+	option api_url ''
 
 	# Optional manual device key. Leave empty to detect it automatically.
 	option device ''

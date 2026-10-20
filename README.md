@@ -41,7 +41,6 @@ site/                                      # 固件下载页（发布到 gh-page
 tools/gen_ota_index.py                     # 生成 ota.json 与 history.json
 tools/embed_ota_meta.py                    # 编译时写 /etc/ota/build.json
 tools/publish_site.sh                      # 把页面与索引推送到 gh-pages 分支
-integration/zerowrt/                       # ZeroWrt 接入说明与补丁
 ```
 
 ## 安装
@@ -90,7 +89,7 @@ apk add --allow-untrusted luci-app-ota-*.apk
 
 | 选项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `api_url` | ZeroWrt 的索引地址 | 更新索引 JSON 的 URL |
+| `api_url` | 空 | 更新索引 JSON 的 URL，未填时页面会提示去配置 |
 | `device` | 空 | 手动指定设备标识，留空自动识别 |
 | `auto_check` | `1` | 打开页面且距上次检查超过 10 分钟时自动检查 |
 | `keep_settings` | `1` | 安装页「保留设置」默认勾选 |
@@ -169,17 +168,56 @@ x86 有两套镜像（传统 BIOS / EFI），因此 x86 会优先匹配带 `+bio
 - 否则比较版本号（按数字/非数字分段，`20261020` > `20261001`）；
 - 都没有 → 提示无法判断，不会误报。
 
-## 与固件构建集成（ZeroWrt）
+## 接入自己的固件构建
 
-完整的接入步骤见 [integration/zerowrt/README.md](integration/zerowrt/README.md)，要点是三步：
+插件不绑定任何发行版。任何能产出固件镜像的构建流程，只要做三件事即可：
 
-1. 把本仓库克隆到源码树 `package/new/luci-app-ota`，并在 `.config` 里加
-   `CONFIG_PACKAGE_luci-app-ota=y`；
-2. 编译前运行 `tools/embed_ota_meta.py`，把构建时间/设备名写入镜像内的
-   `/etc/ota/build.json`（并写 `version.date` 同步 `SOURCE_DATE_EPOCH`）；
-3. 发布 Release 之后运行 `tools/publish_site.sh`，把页面、`ota.json`、`history.json`
-   一起推送到固件仓库的 `gh-pages` 分支，路由端从
-   `https://minimaxflora.github.io/ZeroWrt/ota.json` 读取。
+1. **编译进固件**：把本仓库放到源码树（例如 `package/new/luci-app-ota`），
+   `.config` 里加 `CONFIG_PACKAGE_luci-app-ota=y`（可选 `luci-i18n-ota-zh-cn`）。
+2. **写入构建元数据**：编译前跑
+   `tools/embed_ota_meta.py --tree <源码树> --info <构建信息.json> --api-url <索引地址>`。
+   它会写 `/etc/ota/build.json`（设备名 + 构建时间戳）、同步 `version.date`，
+   并把索引地址写进 `/etc/uci-defaults/90-luci-app-ota` 作为默认值（用户改过的配置优先）。
+   这一步可以省略，只是固件无法自报构建时间，插件会退回按版本号比较。
+3. **发布索引与页面**：产出镜像后跑
+   `tools/publish_site.sh --repo <owner/repo> --dist <产物目录> ... --branch gh-pages`，
+   生成/合并 `ota.json`、追加 `history.json`，连同 `site/` 一起推到 Pages 分支。
+
+`--info` 是一个可选的 JSON，字段缺失会自动推导（`device` / `model` 决定索引 key 的别名，
+`device_vendor` + `device_model` 只用于页面显示名）：
+
+```json
+{ "board": "mediatek", "subtarget": "filogic",
+  "device": "ruijie_rg-x60-new",
+  "device_vendor": "Ruijie", "device_model": "RG-X60",
+  "version": "20261020" }
+```
+
+GitHub Actions 里的最小片段（命令与具体发行版无关）：
+
+```yaml
+      - name: OTA metadata
+        run: |
+          owner="$(echo "$GITHUB_REPOSITORY_OWNER" | tr 'A-Z' 'a-z')"
+          repo="$(basename "$GITHUB_REPOSITORY")"
+          python3 tools/embed_ota_meta.py --tree "$BUILD_TREE" \
+            --info build-info.json \
+            --api-url "https://${owner}.github.io/${repo}/ota.json"
+
+      # ... 编译固件 ...
+
+      - name: Publish OTA page
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sh tools/publish_site.sh --repo "$GITHUB_REPOSITORY" --dist dist \
+            --device "$DEVICE" --target "$TARGET" --version "$VERSION" \
+            --branch gh-pages
+```
+
+推送后到仓库 `Settings → Pages` 选 **Deploy from a branch / `gh-pages` / `/`**。
+之后固件就在 `https://<owner>.github.io/<repo>/ota.json` 上检查更新。
 
 ## 固件下载页（GitHub Pages）
 
@@ -187,10 +225,12 @@ x86 有两套镜像（传统 BIOS / EFI），因此 x86 会优先匹配带 `+bio
 GitHub Pages 直接托管（分支根目录，`.nojekyll` 已带）：
 
 ```
-https://minimaxflora.github.io/ZeroWrt/          # 下载页
-https://minimaxflora.github.io/ZeroWrt/ota.json  # 插件用的更新索引
-https://minimaxflora.github.io/ZeroWrt/history.json  # 页面用的历史记录
+https://<owner>.github.io/<repo>/               # 下载页
+https://<owner>.github.io/<repo>/ota.json       # 插件用的更新索引
+https://<owner>.github.io/<repo>/history.json   # 页面用的历史记录
 ```
+
+（示例部署：<https://minimaxflora.github.io/ZeroWrt/>）
 
 分支内容：
 

@@ -404,18 +404,24 @@ function local_info() {
 		board: S(osr.OPENWRT_BOARD),
 		arch: S(osr.OPENWRT_ARCH),
 		product: S(osr.OPENWRT_DEVICE_PRODUCT),
+		model_name: '',
+		board_name: '',
 		build_date: 0,
+		build_date_source: 'none',
 		device: '',
 		model: '',
 		target: ''
 	};
 
-	// Optional metadata written by the image build (see integration/README).
+	// Optional metadata written by the image build (tools/embed_ota_meta.py).
 	const meta = json_load(META_FILE);
 
 	if (type(meta) == 'object') {
 		if (meta.build_date != null)
 			info.build_date = to_int(meta.build_date, 0);
+
+		if (info.build_date > 0)
+			info.build_date_source = 'build.json';
 
 		if (meta.version != null && S(meta.version) != '')
 			info.version = S(meta.version);
@@ -432,16 +438,47 @@ function local_info() {
 		if (meta.dist != null && S(meta.dist) != '')
 			info.dist = S(meta.dist);
 
-		if (meta.product != null && info.product == '')
+		if (meta.product != null && S(meta.product) != '')
 			info.product = S(meta.product);
 	}
 
-	if (info.build_date == 0)
+	// Human readable model name. OPENWRT_DEVICE_PRODUCT is often left at its
+	// "Generic" default by LEDE style trees, so prefer the board metadata.
+	const board_json = json_load('/etc/board.json');
+
+	if (type(board_json) == 'object' && board_json.model != null) {
+		if (board_json.model.name != null)
+			info.model_name = S(board_json.model.name);
+
+		if (board_json.model.id != null)
+			info.board_name = S(board_json.model.id);
+	}
+
+	if (info.model_name == '')
+		info.model_name = or_str(read_trim('/tmp/sysinfo/model'), '');
+
+	if (info.model_name == '' && lc(info.product) != 'generic' && info.product != '')
+		info.model_name = info.product;
+
+	// "ruijie,rg-x60-new" from the device tree, useful for the UI and for
+	// users who want to know which key was looked up.
+	if (info.board_name == '')
+		info.board_name = or_str(read_trim('/tmp/sysinfo/board_name'), '');
+
+	if (info.build_date == 0) {
 		info.build_date = to_int(osr.OPENWRT_BUILD_DATE, 0);
 
+		if (info.build_date > 0)
+			info.build_date_source = 'os-release';
+	}
+
 	// Legacy key used by other OTA implementations
-	if (info.build_date == 0)
+	if (info.build_date == 0) {
 		info.build_date = to_int(osr.BUILD_DATE, 0);
+
+		if (info.build_date > 0)
+			info.build_date_source = 'os-release';
+	}
 
 	if (info.target == '')
 		info.target = info.board;
@@ -825,7 +862,7 @@ function do_info() {
 		device_key = local.model;
 
 	if (device_key == '')
-		device_key = or_str(read_trim('/tmp/sysinfo/board_name'), '');
+		device_key = local.board_name;
 
 	if (device_key == '')
 		device_key = local.board;

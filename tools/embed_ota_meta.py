@@ -34,6 +34,17 @@ import time
 from pathlib import Path
 
 BUILD_JSON = Path("package/base-files/files/etc/ota/build.json")
+UCI_DEFAULTS = Path("package/base-files/files/etc/uci-defaults/90-luci-app-ota")
+
+UCI_DEFAULTS_TEMPLATE = """#!/bin/sh
+# Set the default OTA index URL once. A URL the user configured already wins,
+# so this only runs on a fresh install or after a settings-wiping upgrade.
+[ -f /etc/config/ota ] || exit 0
+[ -n "$(uci -q get ota.config.api_url)" ] && exit 0
+uci -q set ota.config.api_url='{url}'
+uci -q commit ota
+exit 0
+"""
 
 
 def log(message: str) -> None:
@@ -76,6 +87,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dist-name", default="", help="distribution name (default: build info, else ZeroWrt)")
     parser.add_argument("--build-date", type=int, default=0, help="build timestamp (default: current time)")
     parser.add_argument("--emit", default="", help="write a copy of the metadata to this file")
+    parser.add_argument("--api-url", default="",
+                        help="default update index URL baked into the firmware")
     parser.add_argument("--no-source-date", action="store_true",
                         help="do not write <tree>/version.date")
     parser.add_argument("--print", action="store_true", help="print the metadata as JSON")
@@ -135,6 +148,13 @@ def main(argv: list[str] | None = None) -> int:
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     log(f"wrote {destination}")
+
+    if args.api_url:
+        defaults = tree / UCI_DEFAULTS
+        defaults.parent.mkdir(parents=True, exist_ok=True)
+        defaults.write_text(UCI_DEFAULTS_TEMPLATE.format(url=args.api_url), encoding="utf-8")
+        defaults.chmod(0o755)
+        log(f"wrote {defaults} (api_url default = {args.api_url})")
 
     if args.emit:
         emitted = Path(args.emit)
