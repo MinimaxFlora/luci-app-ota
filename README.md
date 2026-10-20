@@ -14,6 +14,7 @@
   - `root/usr/share/rpcd/ucode/*` 基于 ucode 的 rpcd 对象
   - `htdocs/luci-static/resources/view/ota/*.js` 前端视图（`view` / `form` / `rpc` / `E()`）
   - `po/` 多语言，自带简体中文
+- **自带固件下载页**：`site/` 里的静态页面发布到 GitHub Pages，按设备列出最新镜像、SHA256 与更新日志，并给出 OTA 升级步骤。
 - **不依赖自编译 C 程序**：下载用系统现有的 `curl` / `uclient-fetch` / `wget`，自动选择。
 - **进度真实**：后台下载进程 + 文件大小推算进度，页面显示百分比、速度、剩余时间、进度条。
 - **强制 SHA256 校验**：索引里没有 SHA256 直接拒绝下载；校验失败自动丢弃。
@@ -36,9 +37,10 @@ root/usr/share/luci/menu.d/luci-app-ota.json
 htdocs/luci-static/resources/view/ota/overview.js       # 系统 -> 在线升级 -> 概览
 htdocs/luci-static/resources/view/ota/configuration.js  # 系统 -> 在线升级 -> 配置
 po/zh_Hans/ota.po                          # 简体中文翻译
-tools/gen_ota_index.py                     # 生成更新索引（在固件仓库 CI 里跑）
+site/                                      # 固件下载页（发布到 gh-pages）
+tools/gen_ota_index.py                     # 生成 ota.json 与 history.json
 tools/embed_ota_meta.py                    # 编译时写 /etc/ota/build.json
-tools/publish_ota_index.sh                 # 把索引推送到固件仓库的 ota 分支
+tools/publish_site.sh                      # 把页面与索引推送到 gh-pages 分支
 integration/zerowrt/                       # ZeroWrt 接入说明与补丁
 ```
 
@@ -136,6 +138,8 @@ apk add --allow-untrusted luci-app-ota-*.apk
 | `changelog` | 否 | Markdown，显示在界面上 |
 | `file` | 否 | 文件名，仅用于显示 |
 | `target` / `device` | 否 | 仅用于显示 |
+| `label` | 否 | 设备的人类可读名称，下载页显示用 |
+| `variant` | 否 | x86 变体（`bios` / `efi`），下载页显示用 |
 
 同时也兼容 `luci-app-ota`（sbwml 版）的扁平格式，并自动取数组里 `build_date` 最大的一项：
 
@@ -173,9 +177,50 @@ x86 有两套镜像（传统 BIOS / EFI），因此 x86 会优先匹配带 `+bio
    `CONFIG_PACKAGE_luci-app-ota=y`；
 2. 编译前运行 `tools/embed_ota_meta.py`，把构建时间/设备名写入镜像内的
    `/etc/ota/build.json`（并写 `version.date` 同步 `SOURCE_DATE_EPOCH`）；
-3. 发布 Release 之后运行 `tools/publish_ota_index.sh`，把索引推送到固件仓库的
-   `ota` 分支，路由端从
-   `https://raw.githubusercontent.com/MinimaxFlora/ZeroWrt/ota/ota.json` 读取。
+3. 发布 Release 之后运行 `tools/publish_site.sh`，把页面、`ota.json`、`history.json`
+   一起推送到固件仓库的 `gh-pages` 分支，路由端从
+   `https://minimaxflora.github.io/ZeroWrt/ota.json` 读取。
+
+## 固件下载页（GitHub Pages）
+
+发布脚本会把 `site/` 里的静态页面连同数据一起推到固件仓库的 `gh-pages` 分支，
+GitHub Pages 直接托管（分支根目录，`.nojekyll` 已带）：
+
+```
+https://minimaxflora.github.io/ZeroWrt/          # 下载页
+https://minimaxflora.github.io/ZeroWrt/ota.json  # 插件用的更新索引
+https://minimaxflora.github.io/ZeroWrt/history.json  # 页面用的历史记录
+```
+
+分支内容：
+
+| 文件 | 说明 |
+| --- | --- |
+| `index.html` `assets/` `favicon.svg` | 来自 `site/`，改样式/文案只改这里 |
+| `ota.json` | 最新一次索引（与插件同源，多设备条目合并） |
+| `history.json` | 每次构建追加一条，页面据此渲染更新日志，默认保留 120 条 |
+| `.nojekyll` | 跳过 Jekyll，保证 `assets/` 原样发布 |
+
+页面特性：
+
+- 按设备卡片列出最新镜像：版本、构建时间、大小、SHA256（点「复制」），直接下载；
+- x86 的 `传统 BIOS` / `UEFI` 用徽章区分，避免刷错；
+- 更新日志可按设备筛选，Markdown 渲染，带「最新」标记与 GitHub 发布页链接；
+- 中英文切换（`?lang=en` 可直接指定）、明暗主题、移动端适配，零外部依赖（不引用 CDN）。
+
+本地预览（不需要联网）：
+
+```sh
+# 用真实产物生成一次页面数据
+tools/publish_site.sh --repo MinimaxFlora/ZeroWrt --dist dist \
+  --device x86_64 --target x86/64 --version 20261021 \
+  --build-date "$(date +%s)" --site site --no-push
+
+python3 -m http.server -d _site 8000   # 打开 http://localhost:8000
+```
+
+换品牌：改 `site/assets/app.js` 顶部的 `CONFIG`（名称、仓库、设备别名），
+以及 `site/index.html` 里的文案与 `assets/logo.svg`。
 
 ## 命令行
 
@@ -242,6 +287,14 @@ rpcd ucode 模块 (/usr/share/rpcd/ucode/luci.ota)
 
 **想关闭下载后预检**
 配置里关掉 `verify_image`，或 `uci set ota.config.verify_image=0`。
+
+**下载页上的设备名不对 / 想加一台设备**
+索引里的 `label` 决定卡片标题（`gen_ota_index.py --label`，ZeroWrt 会自动取
+`.zerowrt-info.json` 里的厂商 + 型号）；没有 `label` 时用设备标识，再不行就到
+`site/assets/app.js` 的 `CONFIG.labels` 里加一条映射。
+
+**如何只看某个设备的更新日志**
+在下载页的「更新日志」区域点设备名即可筛选。
 
 ## 致谢
 

@@ -1,21 +1,16 @@
-# 给 ZeroWrt 添加在线升级（luci-app-ota）
+# 给 ZeroWrt 添加在线升级（luci-app-ota）+ 固件下载页
 
 本文说明如何把 [luci-app-ota](../..) 接入 [ZeroWrt](https://github.com/MinimaxFlora/ZeroWrt)
-的 GitHub Actions 构建流程，最终效果：
+的 GitHub Actions 构建流程。最终效果：
 
 ```
-固件编译 → 发布 Release → 生成/更新 ota.json（推送到 ota 分支）
-                                     ↓
-路由 LuCI：系统 → 在线升级 → 检查更新 → 下载 → 安装（sysupgrade）
+固件编译 → 发布 Release → 生成 ota.json / history.json + 静态页面 → 推送 gh-pages
+                                        ↓
+        https://minimaxflora.github.io/ZeroWrt/           下载页（按设备列镜像、SHA256、更新日志）
+        https://minimaxflora.github.io/ZeroWrt/ota.json   路由端读取的更新索引
+                                        ↓
+              路由 LuCI：系统 → 在线升级 → 检查更新 → 下载 → 安装（sysupgrade）
 ```
-
-索引地址（插件默认值）：
-
-```
-https://raw.githubusercontent.com/MinimaxFlora/ZeroWrt/ota/ota.json
-```
-
----
 
 ## 一、需要改动的三个地方
 
@@ -23,13 +18,10 @@ https://raw.githubusercontent.com/MinimaxFlora/ZeroWrt/ota/ota.json
 | --- | --- | --- |
 | 1 | `scripts/zerowrt_core/configgen.py` | `PACKAGES` 里加 `CONFIG_PACKAGE_luci-app-ota` |
 | 2 | `.github/workflows/build.yml` | 加「克隆插件」和「写 OTA 元数据」两步 |
-| 3 | `.github/workflows/build.yml` | 发布 Release 之后加「发布索引」一步 |
+| 3 | `.github/workflows/build.yml` | 发布 Release 之后加「发布页面与索引」一步 |
 
 > 不修改 `packages.py` / `configgen.py` 的其他逻辑，全部用工作流步骤完成，
 > 改动最小、最容易回滚。
-
----
-
 
 ## 直接打补丁
 
@@ -102,32 +94,41 @@ git diff --stat   # 确认改动
 > 计算构建时间，优先读 `TOPDIR/version.date`。不写就退回 git 提交时间，
 > 同一个 commit 多次构建会得到相同时间戳，OTA 就无法区分新旧。
 
-### 3) 发布索引
+### 3) 发布页面与索引
 
 在 `Publish device release` 之后加：
 
 ```yaml
-      - name: Publish OTA index
+      - name: Publish OTA page
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sh "$LEDE_DIR/package/new/luci-app-ota/tools/publish_ota_index.sh" \
+          sh "$LEDE_DIR/package/new/luci-app-ota/tools/publish_site.sh" \
             --repo "$GITHUB_REPOSITORY" \
             --dist dist \
             --meta "$GITHUB_WORKSPACE/ota-meta.json" \
             --tag "$ZEROWRT_DEVICE" \
-            --branch ota
+            --branch gh-pages
 ```
 
 脚本行为：
 
-1. 尝试 `git clone -b ota`；分支不存在就创建孤儿分支；
-2. 读取 `ota.json`（没有就新建），**只更新本设备的条目**，其他设备条目保留；
-3. 用 `dist/SHA256SUMS` 填 `sha256`，用 `dist/` 里的文件名拼 Release 资源地址；
-4. 有变化才提交并推送，无变化静默退出（不会产生空提交）。
+1. 尝试 `git clone -b gh-pages`；分支不存在就创建孤儿分支；
+2. 把插件仓库里的 `site/`（页面）复制过去；
+3. 生成/合并 `ota.json`，并把本次构建追加进 `history.json`（页面更新日志用）；
+4. 有变化才提交并推送（提交信息带 `[skip ci]`，不会触发额外 workflow）。
 
-第一次运行后仓库会多出 `ota` 分支，`ota.json` 内容形如：
+`gh-pages` 分支内容：
+
+```
+index.html  assets/  favicon.svg   # 来自 site/，页面本体
+ota.json                           # 插件用的更新索引（多设备合并）
+history.json                       # 页面用的发布历史（默认保留 120 条）
+.nojekyll                          # 跳过 Jekyll
+```
+
+第一次运行后仓库会多出 `gh-pages` 分支。`ota.json` 内容形如：
 
 ```json
 {
@@ -142,6 +143,9 @@ git diff --stat   # 确认改动
       "sha256": "…",
       "size": 33554432,
       "file": "zerowrt-mediatek-filogic-ruijie_rg-x60-new-squashfs-sysupgrade.bin",
+      "target": "mediatek/filogic",
+      "device": "ruijie_rg-x60-new",
+      "label": "Ruijie RG-X60",
       "changelog": "**ZeroWrt 20261020**\n\nDevice: `ruijie_rg-x60-new`…"
     },
     "ruijie,rg-x60-new": { "...": "同上" },
@@ -157,15 +161,38 @@ git diff --stat   # 确认改动
 > 每次构建只会替换**本次设备**的条目，所以 `ruijie_rg-x60-new` 和 `x86_64`
 > 各自构建一次后，索引里两套设备都在。
 
----
+## 三、开启 GitHub Pages（只需一次）
 
-## 三、更新日志（changelog）
+分支出现之后，在仓库 `Settings → Pages`：
 
-索引里的 `changelog` 默认由 `dist/BUILD_INFO.txt` + 本次 Actions 运行链接组成。
-如果想要更漂亮的更新日志，加一个步骤把 Markdown 写到文件，然后传参：
+```
+Source: Deploy from a branch
+Branch: gh-pages   /  (root)
+```
+
+或者用命令行：
+
+```sh
+gh api -X POST repos/MinimaxFlora/ZeroWrt/pages \
+  -H "Accept: application/vnd.github+json" \
+  -f 'source[branch]=gh-pages' -f 'source[path]=/'
+```
+
+之后每次构建都会自动更新：
+
+- 下载页：`https://minimaxflora.github.io/ZeroWrt/`
+- 索引：`https://minimaxflora.github.io/ZeroWrt/ota.json`
+
+> Pages 对 `ota.json` 有约 10 分钟缓存，OTA 检查可以接受；想立刻看到最新值可以
+> 在地址后面加 `?t=时间戳` 验证（插件本身不需要）。
+
+## 四、更新日志（changelog）
+
+索引和页面里的 `changelog` 默认由 `dist/BUILD_INFO.txt` + 本次 Actions 运行链接组成。
+想要更漂亮的内容，加一步写 Markdown 并传参：
 
 ```yaml
-      - name: Publish OTA index
+      - name: Publish OTA page
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -177,42 +204,39 @@ git diff --stat   # 确认改动
           - 修复 xxx
 
           EOF
-          sh "$LEDE_DIR/package/new/luci-app-ota/tools/publish_ota_index.sh" \
+          sh "$LEDE_DIR/package/new/luci-app-ota/tools/publish_site.sh" \
             --repo "$GITHUB_REPOSITORY" \
             --dist dist \
             --meta "$GITHUB_WORKSPACE/ota-meta.json" \
             --tag "$ZEROWRT_DEVICE" \
-            --branch ota \
+            --branch gh-pages \
             --changelog ota-changelog.md
 ```
 
-界面里按 Markdown 渲染（标题、列表、粗体、行内代码、代码块、链接、引用），
-长文本自动滚动，最多保存 4000 字符。
+`ota.json` 里的日志最多 4000 字符，`history.json` 里每条最多 1200 字符
+（页面按 Markdown 渲染：标题、列表、粗体、行内代码、代码块、链接、引用）。
 
----
-
-## 四、验证
+## 五、验证
 
 1. 跑一次 `Build ZeroWrt`（任选设备）。
 2. 确认 Actions 日志里出现 `[ota] wrote …/etc/ota/build.json`、
-   `[ota] published to https://raw.githubusercontent.com/…/ota/ota.json`。
-3. 打开索引地址，确认 JSON 里有该设备的 key。
-4. 设备上：
+   `[ota] published to https://minimaxflora.github.io/ZeroWrt/`。
+3. 打开 `https://minimaxflora.github.io/ZeroWrt/ota.json`，确认 JSON 里有该设备的 key。
+4. 打开下载页，确认卡片、SHA256、更新日志都对。
+5. 设备上：
 
 ```sh
 # 装好插件后
-ota info                 # 看 local.build_date / keys / config.api_url
+ota info                 # 看 local.build_date / device_key / config.api_url
 ota check                # 应该输出 ok: true, check.newer: false
-uci set ota.config.api_url='https://raw.githubusercontent.com/MinimaxFlora/ZeroWrt/ota/ota.json'
+uci set ota.config.api_url='https://minimaxflora.github.io/ZeroWrt/ota.json'
 uci commit ota
 ```
 
-5. 下次构建出新固件后再 `ota check`，`check.newer` 应为 `true`，
+6. 下次构建出新固件后再 `ota check`，`check.newer` 应为 `true`，
    然后到 LuCI「系统 → 在线升级」里下载并安装。
 
----
-
-## 五、本地调试（不跑 CI）
+## 六、本地调试（不跑 CI）
 
 在 Linux 上准备两个目录即可模拟：
 
@@ -221,23 +245,27 @@ mkdir -p /tmp/dist
 cp zerowrt-…-sysupgrade.bin /tmp/dist/
 cd /tmp/dist && sha256sum * > SHA256SUMS && cd -
 
+# 只生成索引
 python3 luci-app-ota/tools/gen_ota_index.py \
   --dist /tmp/dist --out /tmp/ota.json \
   --repo MinimaxFlora/ZeroWrt --tag x86_64 \
-  --device x86_64 --target x86/64 \
+  --device x86_64 --target x86/64 --label "x86_64" \
   --version 20261020 --build-date "$(date +%s)" \
   --changelog-file notes.md
 
-python3 -m json.tool /tmp/ota.json
+# 连页面一起生成，然后本地预览
+sh luci-app-ota/tools/publish_site.sh \
+  --repo MinimaxFlora/ZeroWrt --dist /tmp/dist \
+  --device x86_64 --target x86/64 --version 20261020 \
+  --build-date "$(date +%s)" --no-push
+
+python3 -m http.server -d _site 8000     # http://localhost:8000
 ```
 
-`gen_ota_index.py` 也可以单独用于任何固件仓库：只要给出
-`--dist`（含固件与 `SHA256SUMS`）、`--repo`/`--tag`、`--device`，
-就能生成索引；`--existing` 用来合并旧索引。
+`--no-push` 会把页面、`ota.json`、`history.json` 生成到当前目录的 `_site/`，
+重复执行会接着合并，方便模拟多设备连续构建。
 
----
-
-## 六、可选：把插件写进 Python 代码而不是工作流
+## 七、可选：把插件写进 Python 代码而不是工作流
 
 如果你更希望逻辑集中在 `scripts/` 里，把克隆放到 `packages.py`：
 
@@ -251,15 +279,5 @@ python3 -m json.tool /tmp/ota.json
 
 （`_clone` 的 `ref` 参数必需，`main` 即本仓库默认分支。）
 
-元数据写入放到 `configgen.py` 的 `generate()` 里、`make defconfig` 之后：
-
-```python
-    util.run([
-        sys.executable,
-        str(Path(__file__).resolve().parents[0] / ".." / ".." / "tools" / "embed_ota_meta.py"),
-        "--tree", str(tree),
-        "--info", str(info_path),
-    ], cwd=tree, check=True)
-```
-
-两条路效果一样，工作流方案改动更少。
+元数据写入同理放进 `configgen.generate()`，在 `make defconfig` 之后调用
+`tools/embed_ota_meta.py`。两条路效果一样，工作流方案改动更少。

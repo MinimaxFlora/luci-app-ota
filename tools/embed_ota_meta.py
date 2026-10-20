@@ -96,6 +96,14 @@ def main(argv: list[str] | None = None) -> int:
     dist_name = args.dist_name or str(info.get("dist", "")) or "ZeroWrt"
     model = args.model or model_from_device(device)
 
+    # Human readable product name, used by the download page. "Generic" is the
+    # placeholder vendor of the x86 profiles and is not worth showing.
+    vendor = str(info.get("device_vendor", "")).strip()
+    model_name = str(info.get("device_model", "")).strip()
+    product = " ".join(
+        part for part in (vendor, model_name) if part and part.lower() != "generic"
+    ).strip()
+
     if not version:
         version = time.strftime("%Y%m%d")
 
@@ -120,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
         "target": target,
         "build_date": build_date,
     }
+    if product:
+        metadata["product"] = product
 
     destination = tree / BUILD_JSON
     destination.parent.mkdir(parents=True, exist_ok=True)

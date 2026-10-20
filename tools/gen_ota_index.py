@@ -21,7 +21,12 @@ Typical ZeroWrt usage, after the firmware has been built and published:
 
     tools/gen_ota_index.py --dist dist --out ota.json \\
         --repo MinimaxFlora/ZeroWrt --tag x86_64 --device x86_64 \\
-        --existing ota.json
+        --label "Ruijie RG-X60" --existing ota.json \\
+        --history history.json
+
+``--history`` keeps a site-only ``history.json`` with every past release, which
+is what the download page (``site/``) uses for its changelog. The plugin never
+reads that file.
 """
 
 from __future__ import annotations
@@ -54,6 +59,10 @@ BAD_TOKENS = (
 )
 
 X86_BOARDS = ("x86", "x86_64")
+
+# history.json is fetched by the download page, so keep it small.
+HISTORY_CHANGELOG_LIMIT = 1200
+DEFAULT_HISTORY_LIMIT = 120
 
 
 def log(message: str) -> None:
@@ -235,6 +244,68 @@ def device_keys(device: str, target: str, board: str, variant: str,
     return keys
 
 
+def load_history(path: Path) -> dict:
+    """Read history.json, tolerating a missing or broken file."""
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+            if isinstance(data, dict) and isinstance(data.get("releases"), list):
+                return data
+        except (OSError, json.JSONDecodeError) as exc:
+            log(f"ignoring unreadable history {path}: {exc}")
+    return {"schema": 1, "releases": []}
+
+
+def history_record(entry: dict) -> dict:
+    """Trim an index entry down to what the web page needs."""
+    record = {}
+    for key in ("version", "build_date", "url", "sha256", "size", "file", "target",
+                "device", "label", "variant"):
+        if key in entry:
+            record[key] = entry[key]
+    record["changelog"] = entry.get("changelog", "")[:HISTORY_CHANGELOG_LIMIT]
+    return record
+
+
+def update_history(path: Path, records: list[dict], dist_name: str, limit: int) -> None:
+    """Append this build to history.json (site-only file, newest first)."""
+    history = load_history(path)
+    releases = history["releases"]
+
+    known = {
+        (str(item.get("device", "")), str(item.get("variant", "")), int(item.get("build_date") or 0))
+        for item in releases
+        if isinstance(item, dict)
+    }
+
+    added = 0
+    for entry in records:
+        key = (str(entry.get("device", "")), str(entry.get("variant", "")),
+               int(entry.get("build_date") or 0))
+        if key in known:
+            continue
+        known.add(key)
+        releases.append(history_record(entry))
+        added += 1
+
+    releases.sort(key=lambda item: (-int(item.get("build_date") or 0), str(item.get("device", ""))))
+
+    history = {
+        "schema": 1,
+        "generated": int(time.time()),
+        "dist": dist_name,
+        "releases": releases[:limit],
+    }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(history, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    if added:
+        log(f"history: +{added} release(s), {len(history['releases'])} kept in {path}")
+    else:
+        log(f"history: already up to date ({len(history['releases'])} releases)")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate the luci-app-ota update index")
     parser.add_argument("--dist", default="dist", help="directory with the firmware artifacts")
@@ -243,6 +314,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tag", default="", help="release tag the assets are attached to")
     parser.add_argument("--device", default="", help="device profile name, e.g. ruijie_rg-x60-new")
     parser.add_argument("--board", default="", help="board name (DT compatible), e.g. ruijie,rg-x60-new")
+    parser.add_argument("--label", default="", help="human readable device name, e.g. 'Ruijie RG-X60'")
     parser.add_argument("--target", default="", help="target, e.g. mediatek/filogic")
     parser.add_argument("--version", default="", help="firmware version string")
     parser.add_argument("--build-date", type=int, default=0, help="firmware build timestamp (epoch)")
@@ -255,6 +327,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--existing-url", default="", help="existing index URL to merge into")
     parser.add_argument("--url-base", default="", help="override the asset URL prefix")
     parser.add_argument("--variant", default="", help="variant suffix, e.g. efi or bios")
+    parser.add_argument("--history", default="",
+                        help="history.json to append this release to (used by the download page)")
+    parser.add_argument("--max-history", type=int, default=DEFAULT_HISTORY_LIMIT,
+                        help=f"how many releases to keep in history.json (default {DEFAULT_HISTORY_LIMIT})")
     args = parser.parse_args(argv)
 
     dist = Path(args.dist)
@@ -269,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
     device = args.device or info.get("device", "").split(" ")[0]
     version = args.version or info.get("version", "")
     dist_name = args.dist_name or "ZeroWrt"
+    label = args.label or info.get("product", "")
 
     build_date = args.build_date
     if build_date <= 0:
@@ -350,6 +427,7 @@ def main(argv: list[str] | None = None) -> int:
 
     primary_entry: dict | None = None
     written: list[str] = []
+    records: list[dict] = []
 
     for variant, image, primary in variants:
         if not image.exists():
@@ -386,6 +464,10 @@ def main(argv: list[str] | None = None) -> int:
             "device": device,
             "changelog": changelog,
         }
+        if variant:
+            entry["variant"] = variant
+        if label:
+            entry["label"] = label
 
         keys = device_keys(device, target, args.board, variant, include_plain=primary)
         for key in keys:
@@ -393,7 +475,8 @@ def main(argv: list[str] | None = None) -> int:
             if key not in written:
                 written.append(key)
         if primary_entry is None:
-            primary_entry = entry
+            primary_entry = dict(entry)
+        records.append(dict(entry))
 
         log(f"{name}: {digest[:12]}... {size} bytes -> {', '.join(keys)}")
 
@@ -416,6 +499,9 @@ def main(argv: list[str] | None = None) -> int:
     log(f"index written to {out} ({len(devices)} device keys)")
     for key in written:
         log(f"  key: {key}")
+
+    if args.history:
+        update_history(Path(args.history), records, dist_name, args.max_history)
 
     return 0
 

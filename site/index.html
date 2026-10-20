@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZeroWrt 固件下载</title>
+<meta name="description" content="ZeroWrt 固件在线升级与下载页：按设备列出最新构建、SHA256 校验值、更新日志与 OTA 升级说明。">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#download" data-i18n="skip">跳到下载</a>
+
+<header class="topbar">
+	<div class="container topbar-inner">
+		<a class="brand" href="#top">
+			<img class="brand-logo" src="assets/logo.svg" alt="" width="28" height="28">
+			<span class="brand-name" id="brand-name">ZeroWrt</span>
+		</a>
+
+		<nav class="nav" aria-label="sections">
+			<a href="#download" data-i18n="nav.download">下载</a>
+			<a href="#ota" data-i18n="nav.ota">在线升级</a>
+			<a href="#changelog" data-i18n="nav.changelog">更新日志</a>
+			<a href="#faq" data-i18n="nav.faq">常见问题</a>
+		</nav>
+
+		<div class="topbar-actions">
+			<a class="icon-link" id="repo-link" href="https://github.com/MinimaxFlora/ZeroWrt" target="_blank" rel="noopener noreferrer" title="GitHub">
+				<svg viewBox="0 0 16 16" aria-hidden="true" width="18" height="18"><path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.2c0 3.62 2.29 6.69 5.47 7.78.4.08.55-.18.55-.4l-.01-1.4c-2.23.5-2.7-1.1-2.7-1.1-.36-.95-.88-1.2-.88-1.2-.72-.5.05-.49.05-.49.8.06 1.22.84 1.22.84.71 1.25 1.86.89 2.31.68.07-.53.28-.9.5-1.1-1.78-.21-3.65-.91-3.65-4.06 0-.9.31-1.63.82-2.2-.08-.21-.36-1.05.08-2.18 0 0 .67-.22 2.2.84a8.3 8.3 0 0 1 4 0c1.53-1.06 2.2-.84 2.2-.84.44 1.13.16 1.97.08 2.18.51.57.82 1.3.82 2.2 0 3.16-1.87 3.85-3.66 4.05.29.26.54.76.54 1.54l-.01 2.28c0 .22.15.49.55.4A8.2 8.2 0 0 0 16 8.2C16 3.67 12.42 0 8 0Z"/></svg>
+			</a>
+			<button class="icon-button" id="theme-toggle" type="button" title="主题" aria-label="theme">
+				<svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><path fill="currentColor" d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0 2.5a1 1 0 0 1 1 1V22a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Zm0-19a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V1.5a1 1 0 0 1 1-1ZM22 11h-1.5a1 1 0 1 1 0-2H22a1 1 0 1 1 0 2ZM3.5 11H2a1 1 0 1 1 0-2h1.5a1 1 0 1 1 0 2Zm15.9 8.4-1.06-1.06a1 1 0 1 1 1.41-1.41l1.06 1.06a1 1 0 0 1-1.41 1.41ZM5.25 5.25 4.19 4.19A1 1 0 0 1 5.6 2.78l1.06 1.06A1 1 0 0 1 5.25 5.25Zm13.09-1.06-1.06 1.06a1 1 0 0 1-1.41-1.41l1.06-1.06a1 1 0 0 1 1.41 1.41ZM5.25 18.75a1 1 0 0 1 0 1.41l-1.06 1.06a1 1 0 1 1-1.41-1.41l1.06-1.06a1 1 0 0 1 1.41 0ZM12 20.5a1 1 0 0 1 1 1V23a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Z"/></svg>
+				<svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><path fill="currentColor" d="M12.3 2a1 1 0 0 1 .8 1.6 7.5 7.5 0 0 0 9.3 11.2 1 1 0 0 1 1.3 1.2A10.5 10.5 0 1 1 11.9 2.1a1 1 0 0 1 .4-.1Z"/></svg>
+			</button>
+			<button class="lang-button" id="lang-toggle" type="button">EN</button>
+		</div>
+	</div>
+</header>
+
+<main id="top">
+	<section class="hero">
+		<div class="container">
+			<p class="hero-eyebrow" data-i18n="hero.eyebrow">基于 LEDE 的定制固件</p>
+			<h1 class="hero-title">
+				<span data-i18n="hero.title">ZeroWrt 固件</span>
+				<span class="hero-title-accent" data-i18n="hero.titleAccent">在线升级</span>
+			</h1>
+			<p class="hero-sub" data-i18n="hero.sub">按设备下载最新构建，或直接在 LuCI 里一键升级。每个镜像都提供 SHA256 校验值与完整更新日志。</p>
+
+			<div class="hero-meta" id="hero-meta"></div>
+
+			<div class="hero-actions">
+				<a class="button primary" href="#download" data-i18n="hero.cta">下载最新固件</a>
+				<a class="button" href="#ota" data-i18n="hero.ctaSecondary">如何在线升级</a>
+			</div>
+		</div>
+	</section>
+
+	<section class="section" id="download">
+		<div class="container">
+			<div class="section-head">
+				<h2 data-i18n="download.title">下载</h2>
+				<p class="section-sub" data-i18n="download.sub">每台设备的固件是独立构建的，请选择与你的机器一致的一项。</p>
+			</div>
+
+			<div class="grid" id="device-grid" aria-live="polite">
+				<div class="card skeleton"></div>
+				<div class="card skeleton"></div>
+			</div>
+
+			<div class="links-row">
+				<a id="link-releases" href="https://github.com/MinimaxFlora/ZeroWrt/releases" target="_blank" rel="noopener noreferrer" data-i18n="download.releases">在 GitHub 查看全部版本</a>
+				<a id="link-ota-json" href="ota.json" target="_blank" rel="noopener noreferrer">ota.json</a>
+				<a id="link-history-json" href="history.json" target="_blank" rel="noopener noreferrer">history.json</a>
+			</div>
+		</div>
+	</section>
+
+	<section class="section section-alt" id="ota">
+		<div class="container">
+			<div class="section-head">
+				<h2 data-i18n="ota.title">通过 OTA 升级（推荐）</h2>
+				<p class="section-sub" data-i18n="ota.sub">固件内置 luci-app-ota：在 LuCI 的「系统 → 在线升级」里检查、下载并安装，无需电脑。</p>
+			</div>
+
+			<div class="steps">
+				<div class="step">
+					<span class="step-no">1</span>
+					<h3 data-i18n="ota.step1.title">确认更新源</h3>
+					<p data-i18n="ota.step1.body">插件默认已指向本页的索引地址，一般无需修改。若你手动装过插件，可以在「在线升级 → 配置」里填写：</p>
+					<pre><code id="ota-json-url">ota.json</code></pre>
+				</div>
+				<div class="step">
+					<span class="step-no">2</span>
+					<h3 data-i18n="ota.step2.title">检查更新</h3>
+					<p data-i18n="ota.step2.body">打开「系统 → 在线升级」，点击「检查更新」，会显示新版本的构建时间与更新日志。</p>
+					<pre><code>ota check</code></pre>
+				</div>
+				<div class="step">
+					<span class="step-no">3</span>
+					<h3 data-i18n="ota.step3.title">下载并安装</h3>
+					<p data-i18n="ota.step3.body">下载会在后台进行，完成后自动校验 SHA256 并预检镜像是否属于本机，然后调用 sysupgrade 写入。默认保留当前配置。</p>
+					<pre><code>ota download &amp;&amp; ota apply --keep 1</code></pre>
+				</div>
+			</div>
+
+			<p class="note" data-i18n="ota.note">升级过程中设备会重启，耗时几分钟，请不要断电。安装后配置文件保持不变，管理地址与 WiFi 也不变。</p>
+		</div>
+	</section>
+
+	<section class="section" id="changelog">
+		<div class="container">
+			<div class="section-head">
+				<h2 data-i18n="changelog.title">更新日志</h2>
+				<p class="section-sub" id="changelog-sub" data-i18n="changelog.sub">每次构建都会记录在案。</p>
+			</div>
+
+			<div class="filters" id="changelog-filters"></div>
+			<div class="timeline" id="changelog-list"></div>
+		</div>
+	</section>
+
+	<section class="section section-alt" id="faq">
+		<div class="container">
+			<div class="section-head">
+				<h2 data-i18n="faq.title">常见问题</h2>
+			</div>
+
+			<div class="faq">
+				<details>
+					<summary data-i18n="faq.q1">怎么知道该下载哪个镜像？</summary>
+					<p data-i18n="faq.a1">以路由器为例，型号是 Ruijie RG-X60 就选对应那张卡片；x86 设备分传统 BIOS 与 UEFI 两种，机器以 UEFI 启动就选 UEFI 镜像，否则选 BIOS 镜像。选错会导致无法启动。</p>
+				</details>
+				<details>
+					<summary data-i18n="faq.q2">OTA 和手动刷机有什么区别？</summary>
+					<p data-i18n="faq.a2">OTA 只替换系统分区并保留配置，速度更快、更不容易出错；手动刷机适合首次安装或系统已经无法启动的情况。</p>
+				</details>
+				<details>
+					<summary data-i18n="faq.q3">为什么要提供 SHA256？</summary>
+					<p data-i18n="faq.a3">插件在下载完成后会强制校验 SHA256，值不匹配就丢弃镜像。你也可以手动核对：下载后计算文件哈希，与本页显示的值比较。</p>
+				</details>
+				<details>
+					<summary data-i18n="faq.q4">更新日志里的版本号是什么？</summary>
+					<p data-i18n="faq.a4">ZeroWrt 用构建日期作为版本号（例如 20261020 表示 2026-10-20 的构建），排序与比较都以镜像内的构建时间戳为准。</p>
+				</details>
+				<details>
+					<summary data-i18n="faq.q5">页面多久更新一次？</summary>
+					<p data-i18n="faq.a5">每次构建发布后自动更新一次，数据直接来自固件仓库的发布流程，无需人工维护。</p>
+				</details>
+			</div>
+		</div>
+	</section>
+</main>
+
+<footer class="footer">
+	<div class="container footer-inner">
+		<div>
+			<p class="footer-brand"><span id="footer-brand">ZeroWrt</span> · <span data-i18n="footer.note">本页随每次构建自动更新</span></p>
+			<p class="footer-muted" id="footer-updated"></p>
+		</div>
+		<div class="footer-links">
+			<a href="https://github.com/MinimaxFlora/ZeroWrt" target="_blank" rel="noopener noreferrer">GitHub</a>
+			<a href="https://github.com/MinimaxFlora/ZeroWrt/releases" target="_blank" rel="noopener noreferrer" data-i18n="footer.releases">发布页</a>
+			<a href="https://github.com/MinimaxFlora/luci-app-ota" target="_blank" rel="noopener noreferrer">luci-app-ota</a>
+		</div>
+	</div>
+</footer>
+
+<noscript>
+	<div class="container noscript">
+		<p data-i18n="noscript.text">本页需要 JavaScript 才能列出固件。你也可以直接查看索引文件或 GitHub 发布页。</p>
+		<p><a href="ota.json">ota.json</a> · <a href="https://github.com/MinimaxFlora/ZeroWrt/releases">GitHub Releases</a></p>
+	</div>
+</noscript>
+
+<script src="assets/app.js" defer></script>
+</body>
+</html>

@@ -19,7 +19,7 @@ jobs:
       - name: Shell syntax
         run: |
           sh -n root/usr/libexec/ota-download
-          sh -n tools/publish_ota_index.sh
+          sh -n tools/publish_site.sh
           echo "shell scripts OK"
 
       - name: JSON syntax
@@ -36,7 +36,7 @@ jobs:
 
       - name: JavaScript syntax
         run: |
-          for file in $(find htdocs -name '*.js'); do
+          for file in $(find htdocs site -name '*.js'); do
             node --check "$file"
             echo "OK: $file"
           done
@@ -84,4 +84,39 @@ jobs:
           if unknown:
               raise SystemExit(f"configuration view offers unknown options: {unknown}")
           print("options OK:", ", ".join(options))
+          PY
+      - name: Download page
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          site = Path("site")
+          html = (site / "index.html").read_text(encoding="utf-8")
+          js = (site / "assets" / "app.js").read_text(encoding="utf-8")
+
+          # every locally referenced asset must exist
+          refs = set(re.findall(r'(?:src|href)="((?:assets/|favicon)[^"]*)"', html))
+          missing = [ref for ref in sorted(refs) if not (site / ref).is_file()]
+          if missing:
+              raise SystemExit(f"site/index.html references missing files: {missing}")
+
+          # every data-i18n key must exist in the translation tables
+          keys = set(re.findall(r'data-i18n="([^"]+)"', html))
+          unknown = [
+              key for key in sorted(keys)
+              if not re.search(r"(?:'%s'|(?<![\w.])%s)\s*:" % (re.escape(key), re.escape(key)), js)
+          ]
+          if unknown:
+              raise SystemExit(f"site/index.html uses untranslated keys: {unknown}")
+
+          # zh and en must define the same number of strings
+          blocks = re.findall(r"\n\t\t(?:zh|en): \{(.*?)\n\t\t\}", js, re.S)
+          if len(blocks) != 2:
+              raise SystemExit("could not find the zh/en translation blocks in app.js")
+          counts = [len(re.findall(r"(?m)^\s*(?:'[^']+'|[A-Za-z_$][\w$]*)\s*:", b)) for b in blocks]
+          if counts[0] != counts[1]:
+              raise SystemExit(f"zh/en translation tables differ in size: {counts}")
+
+          print(f"page OK: {len(refs)} assets, {len(keys)} i18n keys, {counts[0]} strings per language")
           PY
