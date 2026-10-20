@@ -401,7 +401,8 @@ return view.extend({
 			'.ota-ok { color: #2e7d32; }',
 			'.ota-warn { color: #ef6c00; }',
 			'.ota-mono { font-family: monospace; word-break: break-all; }',
-			'.ota-actions { margin-top: .9em; display: flex; gap: .5em; flex-wrap: wrap; }',
+			'.ota-actions { margin-top: .9em; padding-left: 1.1em; display: flex; gap: .5em; flex-wrap: wrap; }',
+			'.cbi-section > .ota-muted { padding-left: 1.1em; }',
 			'.ota-muted { color: #666; font-size: 95%; }',
 
 			/* keep-settings row: aligned with the table columns */

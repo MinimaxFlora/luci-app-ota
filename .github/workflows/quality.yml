@@ -58,6 +58,8 @@ jobs:
             sudo apt-get update -qq
             sudo apt-get install -y -qq gettext
           fi
+          # the .pot and the .po must match the strings in the sources
+          python3 tools/gen_po.py --check
           for file in po/*/*.po; do
             msgfmt --check -o /dev/null "$file"
             echo "OK: $file"

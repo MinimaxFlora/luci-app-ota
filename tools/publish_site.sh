@@ -6,10 +6,10 @@
 # The branch ends up with:
 #
 #   index.html            the download page (from site/)
-#   assets/               css / js / logo
+#   assets/               css / js / logo.png
 #   ota.json              the update index used by luci-app-ota
 #   history.json          every release, used by the page changelog
-#   favicon.svg .nojekyll
+#   .nojekyll             serve assets/ untouched
 #
 # usage: publish_site.sh --repo OWNER/REPO [options]
 #
@@ -26,6 +26,7 @@
 #   --changelog FILE    markdown changelog for this build
 #   --url-base URL      override the asset URL prefix
 #   --site DIR          page source                            (default: <repo>/site)
+#   --logo FILE         logo.png to use instead of the bundled one
 #   --branch NAME       branch that stores the page            (default: gh-pages)
 #   --max-history N     releases kept in history.json          (default 120)
 #   --no-push           build into ./_site for local preview, do not push
@@ -206,4 +207,14 @@ git -C "$OUT" push --quiet origin "$BRANCH"
 
 OWNER=$(printf '%s' "${REPO%%/*}" | tr 'A-Z' 'a-z')
 NAME=$(printf '%s' "${REPO#*/}")
-echo "[ota] published to https://${OWNER}.github.io/${NAME}/"
+PAGE_URL="https://${OWNER}.github.io/${NAME}/"
+
+# A CNAME file in site/ switches the published site to a custom domain.
+if [ -f "$OUT/CNAME" ]; then
+	CUSTOM=$(head -n 1 "$OUT/CNAME" | tr -d ' \r\n')
+	if [ -n "$CUSTOM" ]; then
+		PAGE_URL="https://${CUSTOM}/"
+	fi
+fi
+
+echo "[ota] published to ${PAGE_URL}"

@@ -219,6 +219,10 @@ GitHub Actions 里的最小片段（命令与具体发行版无关）：
 推送后到仓库 `Settings → Pages` 选 **Deploy from a branch / `gh-pages` / `/`**。
 之后固件就在 `https://<owner>.github.io/<repo>/ota.json` 上检查更新。
 
+想用自己的域名：把域名写进 `site/CNAME`（例如 `ota.example.com`），并在 DNS 里加一条
+`CNAME ota.example.com → <owner>.github.io`（Cloudflare 记得关掉代理，保持 DNS only），
+然后在 Pages 设置里填同一个域名，等证书签发后勾上 Enforce HTTPS。
+
 ## 固件下载页（GitHub Pages）
 
 发布脚本会把 `site/` 里的静态页面连同数据一起推到固件仓库的 `gh-pages` 分支，
@@ -236,7 +240,7 @@ https://<owner>.github.io/<repo>/history.json   # 页面用的历史记录
 
 | 文件 | 说明 |
 | --- | --- |
-| `index.html` `assets/` `favicon.svg` | 来自 `site/`，改样式/文案只改这里 |
+| `index.html` `assets/` | 来自 `site/`，改样式/文案只改这里 |
 | `ota.json` | 最新一次索引（与插件同源，多设备条目合并） |
 | `history.json` | 每次构建追加一条，页面据此渲染更新日志，默认保留 120 条 |
 | `.nojekyll` | 跳过 Jekyll，保证 `assets/` 原样发布 |
@@ -262,7 +266,7 @@ python3 -m http.server -d _site 8000   # 打开 http://localhost:8000
 ```
 
 换品牌：改 `site/assets/app.js` 顶部的 `CONFIG`（名称、仓库、设备别名），
-以及 `site/index.html` 里的文案与 `assets/logo.svg`。
+以及 `site/index.html` 里的文案与 `site/assets/logo.png`。
 
 ## 命令行
 
