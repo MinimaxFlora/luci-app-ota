@@ -935,11 +935,19 @@ function do_check() {
 	}
 
 	if (entry == null) {
+		let reported = local.device;
+
+		if (reported == '')
+			reported = local.board_name;
+
+		if (reported == '')
+			reported = local.board;
+
 		return {
 			ok: false,
 			code: 'no_device',
 			msg: 'no firmware for this device in the index',
-			device: (local.device != '') ? local.device : or_str(local.board, 'unknown'),
+			device: reported,
 			keys: candidates,
 			available: keys(map)
 		};
