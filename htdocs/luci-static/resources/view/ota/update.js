@@ -354,6 +354,23 @@ return view.extend({
 			this.body
 		]);
 
+		// Other LuCI pages show a refresh chip in the header while they poll;
+		// this page loads its data once, so put the same chip there manually.
+		const indicators = document.querySelector('#indicators');
+
+		if (indicators && !indicators.querySelector('[data-ota-refresh]')) {
+			const chip = E('span', {
+				'data-indicator': 'poll-status',
+				'data-clickable': 'true',
+				'data-style': 'active',
+				'data-ota-refresh': '1',
+				'title': _('Refresh')
+			}, _('Refresh'));
+
+			chip.addEventListener('click', () => window.location.reload());
+			indicators.appendChild(chip);
+		}
+
 		if (!this.info) {
 			this.body.appendChild(E('div', { 'class': 'cbi-section' }, [
 				E('p', {}, _('The OTA backend did not respond.')),

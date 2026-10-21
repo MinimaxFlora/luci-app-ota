@@ -104,7 +104,7 @@ return view.extend({
 			// known mirrors plus "custom"; type a URL there, press enter and
 			// it becomes a selected entry of the list.
 			const select = E('select', { 'class': 'cbi-input-select' });
-			const customOption = E('option', { 'value': customValue }, _('Custom'));
+			const customOption = E('option', { 'value': customValue }, [ '－ ', _('Custom'), ' －' ]);
 
 			presets.forEach((url) => select.appendChild(E('option', { 'value': url }, url)));
 			select.appendChild(customOption);
