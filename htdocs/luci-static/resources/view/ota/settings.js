@@ -123,11 +123,18 @@ return view.extend({
 			};
 
 			const showCustom = (focus) => {
-				select.value = customValue;
+				// The text field takes the place of the select; there is never
+				// an extra box underneath it.
+				select.style.display = 'none';
 				input.style.display = 'block';
 
 				if (focus)
 					input.focus();
+			};
+
+			const showSelect = () => {
+				input.style.display = 'none';
+				select.style.display = 'block';
 			};
 
 			// Leave the text field: whatever was typed becomes the selection.
@@ -135,14 +142,14 @@ return view.extend({
 				const value = (input.value || '').trim();
 
 				if (value === '') {
-					input.style.display = 'none';
+					showSelect();
 					return;
 				}
 
 				remember(value);
 				select.value = value;
 				input.value = value;
-				input.style.display = 'none';
+				showSelect();
 			};
 
 			field.style.display = 'block';
@@ -156,7 +163,6 @@ return view.extend({
 			select.style.boxSizing = 'border-box';
 			select.style.display = 'block';
 			input.style.boxSizing = 'border-box';
-			input.style.marginTop = '.4em';
 			input.style.display = 'none';
 			input.removeAttribute('list');
 			input.removeAttribute('autocomplete');
@@ -166,7 +172,7 @@ return view.extend({
 					showCustom(true);
 				else {
 					input.value = select.value;
-					input.style.display = 'none';
+					showSelect();
 				}
 			});
 
