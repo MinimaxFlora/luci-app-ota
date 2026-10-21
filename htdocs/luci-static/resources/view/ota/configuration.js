@@ -49,7 +49,7 @@ return view.extend({
 		o.rmempty = true;
 
 		o = s.option(form.Value, 'download_proxy', _('Download acceleration site'),
-			_('GitHub downloads are prefixed with this site, for example https://gh-proxy.kejizero.xyz/https://github.com/... Leave it empty to download straight from GitHub.'));
+			_('Choose the GitHub proxy acceleration site.'));
 		o.placeholder = presets[0];
 		o.default = presets[0];
 		o.rmempty = true;

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-21 18:15+0800\n"
+"PO-Revision-Date: 2026-10-21 19:16+0800\n"
 "Last-Translator: MinimaxFlora <MinimaxFlora@users.noreply.github.com>\n"
 "Language-Team: Chinese\n"
 "Language: zh_Hans\n"
@@ -105,6 +105,10 @@ msgstr "打开页面时检查"
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
 
+#: htdocs/luci-static/resources/view/ota/configuration.js:52
+msgid "Choose the GitHub proxy acceleration site."
+msgstr "选择 GitHub 代理加速站点。"
+
 #: htdocs/luci-static/resources/view/ota/overview.js:863
 #: root/usr/share/luci/menu.d/luci-app-ota.json:24
 msgid "Configuration"
@@ -195,15 +199,6 @@ msgstr "固件更新"
 #: htdocs/luci-static/resources/view/ota/overview.js:485
 msgid "Firmware version"
 msgstr "固件版本"
-
-#: htdocs/luci-static/resources/view/ota/configuration.js:52
-msgid ""
-"GitHub downloads are prefixed with this site, for example "
-"https://gh-proxy.kejizero.xyz/https://github.com/... Leave it empty to "
-"download straight from GitHub."
-msgstr ""
-"GitHub 下载会自动在该站点下拼接，例如 "
-"https://gh-proxy.kejizero.xyz/https://github.com/...；留空则直连 GitHub 下载。"
 
 #: root/usr/share/rpcd/acl.d/luci-app-ota.json:3
 msgid "Grant access to the OTA firmware update functionality"
