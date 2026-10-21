@@ -98,103 +98,164 @@ return view.extend({
 			const reference = node.querySelector('input[id$="api_url"]');
 			const width = reference ? Math.round(reference.getBoundingClientRect().width) : 0;
 			const field = input.parentNode;
-			const customValue = '__custom__';
 
-			// Same behaviour as the combobox mosdns uses: a select for the
-			// known mirrors plus "custom"; type a URL there, press enter and
-			// it becomes a selected entry of the list.
-			const select = E('select', { 'class': 'cbi-input-select' });
-			const customOption = E('option', { 'value': customValue }, [ '－ ', _('Custom'), ' －' ]);
+			// Same widget as the mosdns DNS picker: a box that opens a panel
+			// with the known mirrors and, at the bottom of that panel, a field
+			// to type your own value. Enter turns it into a selected entry.
+			const combo = E('div', { 'class': 'ota-combo' });
+			const control = E('div', { 'class': 'ota-combo-box', 'tabindex': '0' });
+			const caption = E('span', { 'class': 'ota-combo-caption' }, '');
+			const caret = E('span', { 'class': 'ota-combo-caret' });
+			const panel = E('div', { 'class': 'ota-combo-panel', 'style': 'display:none' });
 
-			presets.forEach((url) => select.appendChild(E('option', { 'value': url }, url)));
-			select.appendChild(customOption);
+			control.appendChild(caption);
+			control.appendChild(caret);
+			combo.appendChild(control);
+			combo.appendChild(panel);
 
-			// Adds a typed value right above the "custom" entry, unless the
-			// list already has it.
-			const remember = (value) => {
-				const existing = Array.from(select.options).find((o) => o.value === value);
+			const values = presets.slice();
+			const current = (input.value || '').trim() || presets[0];
 
-				if (existing)
-					return existing;
+			if (values.indexOf(current) < 0)
+				values.unshift(current);
 
-				const option = E('option', { 'value': value }, value);
-				select.insertBefore(option, customOption);
-				return option;
+			const setValue = (value) => {
+				input.value = value;
+				caption.textContent = value;
 			};
 
-			const showCustom = (focus) => {
-				// The text field takes the place of the select; there is never
-				// an extra box underneath it.
-				select.style.display = 'none';
-				input.style.display = 'block';
-
-				if (focus)
-					input.focus();
+			const close = () => {
+				panel.style.display = 'none';
 			};
 
-			const showSelect = () => {
-				input.style.display = 'none';
-				select.style.display = 'block';
-			};
-
-			// Leave the text field: whatever was typed becomes the selection.
-			const commit = () => {
-				const value = (input.value || '').trim();
+			const commitCustom = (raw) => {
+				const value = (raw || '').trim();
 
 				if (value === '') {
-					showSelect();
+					close();
 					return;
 				}
 
-				remember(value);
-				select.value = value;
-				input.value = value;
-				showSelect();
+				if (values.indexOf(value) < 0)
+					values.push(value);
+
+				setValue(value);
+				close();
 			};
 
-			field.style.display = 'block';
+			const buildPanel = () => {
+				while (panel.firstChild)
+					panel.removeChild(panel.firstChild);
+
+				values.forEach((value) => {
+					const row = E('div', {
+						'class': 'ota-combo-option' + (value === input.value ? ' ota-combo-selected' : '')
+					}, value);
+
+					row.addEventListener('mousedown', (ev) => {
+						ev.preventDefault();
+						setValue(value);
+						close();
+					});
+
+					panel.appendChild(row);
+				});
+
+				const custom = E('input', {
+					'type': 'text',
+					'class': 'ota-combo-custom',
+					'placeholder': '－ ' + _('Custom') + ' －'
+				});
+
+				custom.addEventListener('keydown', (ev) => {
+					if (ev.key === 'Enter') {
+						ev.preventDefault();
+						commitCustom(custom.value);
+					}
+					else if (ev.key === 'Escape') {
+						close();
+					}
+				});
+
+				panel.appendChild(custom);
+				return custom;
+			};
+
+			let customField = null;
+
+			control.addEventListener('mousedown', (ev) => {
+				ev.preventDefault();
+
+				if (panel.style.display === 'none') {
+					customField = buildPanel();
+					panel.style.display = 'block';
+					control.focus();
+				}
+				else {
+					close();
+				}
+			});
+
+			document.addEventListener('mousedown', (ev) => {
+				if (panel.style.display !== 'none' && !combo.contains(ev.target))
+					close();
+			});
+
+			setValue(current);
+
+			// render() runs on a detached node, so the width has to be measured
+			// once LuCI has inserted it into the page.
+			window.setTimeout(() => {
+				const ref = node.querySelector('input[id$="api_url"]');
+
+				if (!ref)
+					return;
+
+				const w = Math.round(ref.getBoundingClientRect().width);
+
+				if (w > 0) {
+					combo.style.width = w + 'px';
+					control.style.width = w + 'px';
+				}
+			}, 0);
 
 			if (width > 0) {
-				field.style.width = width + 'px';
-				select.style.width = width + 'px';
-				input.style.width = width + 'px';
+				combo.style.width = width + 'px';
+				control.style.width = width + 'px';
 			}
 
-			select.style.boxSizing = 'border-box';
-			select.style.display = 'block';
-			input.style.boxSizing = 'border-box';
 			input.style.display = 'none';
 			input.removeAttribute('list');
 			input.removeAttribute('autocomplete');
 
-			select.addEventListener('change', () => {
-				if (select.value === customValue)
-					showCustom(true);
-				else {
-					input.value = select.value;
-					showSelect();
-				}
-			});
+			field.style.display = 'block';
 
-			input.addEventListener('keydown', (ev) => {
-				if (ev.key === 'Enter') {
-					ev.preventDefault();
-					commit();
-				}
-			});
+			node.insertBefore(E('style', {}, [
+				'.ota-combo { position: relative; }',
+				'.ota-combo-box { display: flex; align-items: center; justify-content: space-between; gap: .5em;' +
+					' min-height: 38px; padding: 0 .75em; box-sizing: border-box; cursor: pointer;' +
+					' border: 1px solid rgba(128,128,128,.45); border-radius: 6px;' +
+					' background: var(--background-color-high, #fff); color: inherit; }',
+				'.ota-combo-box:focus { outline: none; border-color: #2e9d72; }',
+				'.ota-combo-caption { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
+				'.ota-combo-caret { flex: none; width: 0; height: 0; border-left: 5px solid transparent;' +
+					' border-right: 5px solid transparent; border-top: 6px solid #999; }',
+				'.ota-combo-panel { position: absolute; z-index: 1200; left: 0; right: 0; top: calc(100% + 4px);' +
+					' max-height: 640px; overflow: auto; padding: 6px;' +
+					' background: var(--background-color-high, #fff); color: var(--text-color, inherit);' +
+					' border: 1px solid rgba(128,128,128,.35); border-radius: 8px;' +
+					' box-shadow: 0 10px 28px rgba(0,0,0,.18); }',
+				'.ota-combo-option { padding: .45em .6em; border-radius: 6px; cursor: pointer;' +
+					' white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+				'.ota-combo-option:hover { background: rgba(46,157,114,.12); }',
+				'.ota-combo-selected { background: rgba(46,157,114,.16); font-weight: 600; }',
+				'.ota-combo-custom { width: 100%; box-sizing: border-box; margin-top: 6px; padding: .45em .6em;' +
+					' font: inherit; border: 1px solid rgba(128,128,128,.45); border-radius: 6px;' +
+					' background: var(--background-color-high, #fff); color: inherit; }'
+			].join('\n')), node.firstChild);
 
-			input.addEventListener('blur', () => {
-				if (input.style.display !== 'none')
-					commit();
-			});
-
-			field.insertBefore(select, input);
-
-			const current = (input.value || '').trim() || presets[0];
-
-			remember(current);
-			select.value = current;
-			input.value = current;
+			field.appendChild(combo);
+			field.appendChild(input);
 
 			return node;
 		});
