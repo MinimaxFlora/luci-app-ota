@@ -366,11 +366,6 @@ function load_config() {
 	cfg.api_url = or_str(c.get('ota', 'config', 'api_url'), '');
 	cfg.device = or_str(c.get('ota', 'config', 'device'), '');
 	cfg.download_proxy = or_str(c.get('ota', 'config', 'download_proxy'), '');
-
-	// "custom" is a placeholder in the dropdown; the real URL is stored next
-	// to it so the list itself stays a fixed set of known mirrors.
-	if (cfg.download_proxy == 'custom')
-		cfg.download_proxy = or_str(c.get('ota', 'config', 'download_proxy_custom'), '');
 	cfg.auto_check = cfg_flag(c, 'auto_check', true);
 	cfg.keep_settings = cfg_flag(c, 'keep_settings', true);
 	cfg.verify_image = cfg_flag(c, 'verify_image', true);

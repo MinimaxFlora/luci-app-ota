@@ -6,8 +6,7 @@ return view.extend({
 	render: function() {
 		let m, s, o;
 
-		// Acceleration sites offered in the dropdown; the first one is the
-		// default for a fresh installation.
+		// Mirrors offered in the dropdown of the acceleration site field.
 		const presets = [
 			'https://gh-proxy.kejizero.xyz',
 			'https://gh-proxy.com',
@@ -43,20 +42,16 @@ return view.extend({
 			return true;
 		};
 
-		o = s.option(form.ListValue, 'download_proxy', _('Download acceleration site'),
+		// One field: pick a mirror from the list or type any URL.
+		o = s.option(form.Value, 'download_proxy', _('Download acceleration site'),
 			_('Choose the GitHub proxy acceleration site.'));
-		presets.forEach((url) => o.value(url, url));
-		o.value('custom', _('Custom'));
-		o.value('', _('No acceleration (direct)'));
+		o.placeholder = presets[0];
 		o.default = presets[0];
-		o.rmempty = false;
-
-		o = s.option(form.Value, 'download_proxy_custom', _('Custom acceleration site'),
-			_('Full URL of the acceleration site, for example https://gh-proxy.example.com'));
-		o.placeholder = 'https://gh-proxy.example.com';
-		o.depends('download_proxy', 'custom');
-		o.rmempty = false;
+		o.rmempty = true;
 		o.validate = function(section_id, value) {
+			if (!value)
+				return true;
+
 			if (!/^https?:\/\/[^\s]+$/i.test(value))
 				return _('The acceleration site has to be a URL starting with http:// or https://.');
 
@@ -93,6 +88,46 @@ return view.extend({
 		o.default = '0';
 		o.rmempty = false;
 
-		return m.render();
+		const rendered = m.render();
+
+		return Promise.resolve(rendered).then((node) => {
+			const listId = 'ota-download-proxy-presets';
+			const input = node.querySelector('input[id$="download_proxy"], input[name$="download_proxy"]');
+
+			if (input) {
+				const list = E('datalist', { 'id': listId });
+
+				presets.forEach((url) => list.appendChild(E('option', { 'value': url })));
+				node.appendChild(list);
+
+				input.setAttribute('list', listId);
+				input.setAttribute('autocomplete', 'off');
+				input.classList.add('ota-combo');
+
+				// Make the chevron behave like a real dropdown: a click on the
+				// right edge opens the list, a click elsewhere still edits.
+				input.addEventListener('click', (ev) => {
+					const rect = input.getBoundingClientRect();
+
+					if (ev.clientX > rect.right - 28 && typeof input.showPicker === 'function') {
+						try {
+							input.showPicker();
+						}
+						catch (e) {
+							/* not a user gesture, ignore */
+						}
+					}
+				});
+
+				// Draw the chevron ourselves: the native datalist marker is
+				// invisible in several themes.
+				node.insertBefore(E('style', {}, [
+					'.ota-combo { padding-right: 1.9em; background-repeat: no-repeat; background-position: right .55em center;' +
+					' background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'%3E%3Cpath d=\'M1 1l4 4 4-4\' fill=\'none\' stroke=\'%23888\' stroke-width=\'1.6\'/%3E%3C/svg%3E"); }'
+				].join('\n')), node.firstChild);
+			}
+
+			return node;
+		});
 	}
 });

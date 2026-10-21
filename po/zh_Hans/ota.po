@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-21 19:35+0800\n"
+"PO-Revision-Date: 2026-10-21 19:38+0800\n"
 "Last-Translator: MinimaxFlora <MinimaxFlora@users.noreply.github.com>\n"
 "Language-Team: Chinese\n"
 "Language: zh_Hans\n"
@@ -26,17 +26,17 @@ msgstr "发现新固件"
 msgid "A new firmware is available."
 msgstr "发现可用的新固件。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:91
+#: htdocs/luci-static/resources/view/ota/configuration.js:86
 msgid "Allow insecure connections"
 msgstr "允许不安全的连接"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:92
+#: htdocs/luci-static/resources/view/ota/configuration.js:87
 msgid ""
 "Allow plain http:// URLs and skip TLS certificate verification. Only "
 "enable this if you really have to."
 msgstr "允许使用 http:// 地址并跳过 TLS 证书校验。除非确有必要，否则不要开启。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:38
+#: htdocs/luci-static/resources/view/ota/configuration.js:37
 msgid "An update index URL is required."
 msgstr "必须填写更新索引地址。"
 
@@ -97,7 +97,7 @@ msgstr "检查并下载新固件，然后通过 sysupgrade 写入。"
 msgid "Check for updates"
 msgstr "检查更新"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:71
+#: htdocs/luci-static/resources/view/ota/configuration.js:66
 msgid "Check on page load"
 msgstr "打开页面时检查"
 
@@ -114,7 +114,7 @@ msgstr "选择 GitHub 代理加速站点。"
 msgid "Configuration"
 msgstr "配置"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:24
+#: htdocs/luci-static/resources/view/ota/configuration.js:23
 msgid ""
 "Configure where LuCI looks for firmware updates and how they are "
 "handled."
@@ -134,15 +134,7 @@ msgstr "无法开始安装：%s"
 msgid "Current firmware"
 msgstr "当前固件"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:49
-msgid "Custom"
-msgstr "自定义"
-
-#: htdocs/luci-static/resources/view/ota/configuration.js:54
-msgid "Custom acceleration site"
-msgstr "自定义加速站点"
-
-#: htdocs/luci-static/resources/view/ota/configuration.js:66
+#: htdocs/luci-static/resources/view/ota/configuration.js:61
 #: htdocs/luci-static/resources/view/ota/overview.js:494
 msgid "Device key"
 msgstr "设备标识"
@@ -208,14 +200,6 @@ msgstr "固件更新"
 msgid "Firmware version"
 msgstr "固件版本"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:55
-msgid ""
-"Full URL of the acceleration site, for example "
-"https://gh-proxy.example.com"
-msgstr ""
-"加速站点的完整地址，例如 "
-"https://gh-proxy.example.com"
-
 #: root/usr/share/rpcd/acl.d/luci-app-ota.json:3
 msgid "Grant access to the OTA firmware update functionality"
 msgstr "授予在线升级功能的访问权限"
@@ -249,11 +233,11 @@ msgstr "正在安装固件"
 msgid "Keep settings and retain the current configuration"
 msgstr "保留设置并继续使用当前配置"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:76
+#: htdocs/luci-static/resources/view/ota/configuration.js:71
 msgid "Keep settings by default"
 msgstr "默认保留设置"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:67
+#: htdocs/luci-static/resources/view/ota/configuration.js:62
 msgid ""
 "Key that identifies this device in the update index. Leave empty to "
 "detect it automatically from the running firmware."
@@ -268,13 +252,13 @@ msgstr "索引中的设备标识：%s"
 msgid "Last checked: %s"
 msgstr "上次检查：%s"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:82
+#: htdocs/luci-static/resources/view/ota/configuration.js:77
 msgid ""
 "Let sysupgrade check the downloaded image for this device right after "
 "the download. A rejected image is discarded."
 msgstr "下载完成后立即用 sysupgrade 校验镜像是否适用于此设备，被拒绝的镜像会被删除。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:72
+#: htdocs/luci-static/resources/view/ota/configuration.js:67
 msgid ""
 "Look for a new firmware when the overview page is opened and the last "
 "check is older than ten minutes."
@@ -292,10 +276,6 @@ msgstr "设备型号"
 msgid "Neither curl nor uclient-fetch is installed on this device."
 msgstr "设备上既没有 curl 也没有 uclient-fetch。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:50
-msgid "No acceleration (direct)"
-msgstr "不使用加速（直连 GitHub）"
-
 #: htdocs/luci-static/resources/view/ota/overview.js:273
 msgid "No update index URL is configured yet."
 msgstr "尚未配置更新索引地址。"
@@ -308,7 +288,7 @@ msgstr "此固件尚未配置更新索引。"
 msgid "Not enough free space in /tmp to download this firmware."
 msgstr "临时空间（/tmp）不足，无法下载此固件。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:23
+#: htdocs/luci-static/resources/view/ota/configuration.js:22
 #: htdocs/luci-static/resources/view/ota/overview.js:350
 #: root/usr/share/luci/menu.d/luci-app-ota.json:3
 msgid "OTA Firmware Update"
@@ -326,7 +306,7 @@ msgstr "概览"
 msgid "Please check for updates first."
 msgstr "请先检查更新。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:77
+#: htdocs/luci-static/resources/view/ota/configuration.js:72
 msgid "Preselect the \"keep settings\" option before installing a firmware."
 msgstr "安装固件前默认勾选“保留设置”。"
 
@@ -346,7 +326,7 @@ msgstr "重新连接管理界面"
 msgid "Remaining"
 msgstr "剩余"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:87
+#: htdocs/luci-static/resources/view/ota/configuration.js:82
 msgid ""
 "Restrict the index and firmware downloads to IPv4. Helps on networks "
 "with broken IPv6 connectivity."
@@ -361,7 +341,7 @@ msgstr "重试"
 msgid "SHA256"
 msgstr "SHA256"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:28
+#: htdocs/luci-static/resources/view/ota/configuration.js:27
 msgid "Settings"
 msgstr "设置"
 
@@ -395,11 +375,11 @@ msgstr "无法执行 OTA 后台程序。"
 msgid "The OTA backend did not respond."
 msgstr "OTA 后台没有响应。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:41
+#: htdocs/luci-static/resources/view/ota/configuration.js:40
 msgid "The URL has to start with http:// or https://."
 msgstr "地址必须以 http:// 或 https:// 开头。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:61
+#: htdocs/luci-static/resources/view/ota/configuration.js:56
 msgid "The acceleration site has to be a URL starting with http:// or https://."
 msgstr "加速站点必须是 http:// 或 https:// 开头的网址。"
 
@@ -451,7 +431,7 @@ msgstr "更新索引必须使用 HTTPS。如确实需要 HTTP，请在配置中�
 msgid "The update index does not contain a firmware image for this device."
 msgstr "更新索引中没有适用于此设备的固件。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:30
+#: htdocs/luci-static/resources/view/ota/configuration.js:29
 msgid ""
 "The update index is a small JSON file that lists the firmware images "
 "available for each device. It is published by whoever builds the "
@@ -472,7 +452,7 @@ msgstr "该固件没有写入构建时间戳，这里显示的日期由版本号
 msgid "This firmware is up to date"
 msgstr "已是最新固件"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:33
+#: htdocs/luci-static/resources/view/ota/configuration.js:32
 msgid ""
 "URL of the JSON update index. It has to be reachable from the router "
 "itself, not from the browser."
@@ -491,11 +471,11 @@ msgstr "更新失败"
 msgid "Update index"
 msgstr "更新索引"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:32
+#: htdocs/luci-static/resources/view/ota/configuration.js:31
 msgid "Update index URL"
 msgstr "更新索引地址"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:86
+#: htdocs/luci-static/resources/view/ota/configuration.js:81
 msgid "Use IPv4 only"
 msgstr "仅使用 IPv4"
 
@@ -503,7 +483,7 @@ msgstr "仅使用 IPv4"
 msgid "Usually takes 1-3 minutes."
 msgstr "通常需要 1–3 分钟。"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:81
+#: htdocs/luci-static/resources/view/ota/configuration.js:76
 msgid "Validate the image before installing"
 msgstr "安装前校验镜像"
 
@@ -520,7 +500,7 @@ msgstr "版本"
 msgid "Writing the system partition"
 msgstr "写入系统分区"
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:68
+#: htdocs/luci-static/resources/view/ota/configuration.js:63
 msgid "detect automatically"
 msgstr "自动识别"
 

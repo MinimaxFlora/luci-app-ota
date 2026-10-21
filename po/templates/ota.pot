@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 19:35+0800\n"
+"POT-Creation-Date: 2026-10-21 19:38+0800\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -23,17 +23,17 @@ msgstr ""
 msgid "A new firmware is available."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:91
+#: htdocs/luci-static/resources/view/ota/configuration.js:86
 msgid "Allow insecure connections"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:92
+#: htdocs/luci-static/resources/view/ota/configuration.js:87
 msgid ""
 "Allow plain http:// URLs and skip TLS certificate verification. Only "
 "enable this if you really have to."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:38
+#: htdocs/luci-static/resources/view/ota/configuration.js:37
 msgid "An update index URL is required."
 msgstr ""
 
@@ -94,7 +94,7 @@ msgstr ""
 msgid "Check for updates"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:71
+#: htdocs/luci-static/resources/view/ota/configuration.js:66
 msgid "Check on page load"
 msgstr ""
 
@@ -111,7 +111,7 @@ msgstr ""
 msgid "Configuration"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:24
+#: htdocs/luci-static/resources/view/ota/configuration.js:23
 msgid ""
 "Configure where LuCI looks for firmware updates and how they are "
 "handled."
@@ -131,15 +131,7 @@ msgstr ""
 msgid "Current firmware"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:49
-msgid "Custom"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/ota/configuration.js:54
-msgid "Custom acceleration site"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/ota/configuration.js:66
+#: htdocs/luci-static/resources/view/ota/configuration.js:61
 #: htdocs/luci-static/resources/view/ota/overview.js:494
 msgid "Device key"
 msgstr ""
@@ -205,12 +197,6 @@ msgstr ""
 msgid "Firmware version"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:55
-msgid ""
-"Full URL of the acceleration site, for example "
-"https://gh-proxy.example.com"
-msgstr ""
-
 #: root/usr/share/rpcd/acl.d/luci-app-ota.json:3
 msgid "Grant access to the OTA firmware update functionality"
 msgstr ""
@@ -244,11 +230,11 @@ msgstr ""
 msgid "Keep settings and retain the current configuration"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:76
+#: htdocs/luci-static/resources/view/ota/configuration.js:71
 msgid "Keep settings by default"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:67
+#: htdocs/luci-static/resources/view/ota/configuration.js:62
 msgid ""
 "Key that identifies this device in the update index. Leave empty to "
 "detect it automatically from the running firmware."
@@ -263,13 +249,13 @@ msgstr ""
 msgid "Last checked: %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:82
+#: htdocs/luci-static/resources/view/ota/configuration.js:77
 msgid ""
 "Let sysupgrade check the downloaded image for this device right after "
 "the download. A rejected image is discarded."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:72
+#: htdocs/luci-static/resources/view/ota/configuration.js:67
 msgid ""
 "Look for a new firmware when the overview page is opened and the last "
 "check is older than ten minutes."
@@ -287,10 +273,6 @@ msgstr ""
 msgid "Neither curl nor uclient-fetch is installed on this device."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:50
-msgid "No acceleration (direct)"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/ota/overview.js:273
 msgid "No update index URL is configured yet."
 msgstr ""
@@ -303,7 +285,7 @@ msgstr ""
 msgid "Not enough free space in /tmp to download this firmware."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:23
+#: htdocs/luci-static/resources/view/ota/configuration.js:22
 #: htdocs/luci-static/resources/view/ota/overview.js:350
 #: root/usr/share/luci/menu.d/luci-app-ota.json:3
 msgid "OTA Firmware Update"
@@ -321,7 +303,7 @@ msgstr ""
 msgid "Please check for updates first."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:77
+#: htdocs/luci-static/resources/view/ota/configuration.js:72
 msgid "Preselect the \"keep settings\" option before installing a firmware."
 msgstr ""
 
@@ -341,7 +323,7 @@ msgstr ""
 msgid "Remaining"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:87
+#: htdocs/luci-static/resources/view/ota/configuration.js:82
 msgid ""
 "Restrict the index and firmware downloads to IPv4. Helps on networks "
 "with broken IPv6 connectivity."
@@ -356,7 +338,7 @@ msgstr ""
 msgid "SHA256"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:28
+#: htdocs/luci-static/resources/view/ota/configuration.js:27
 msgid "Settings"
 msgstr ""
 
@@ -390,11 +372,11 @@ msgstr ""
 msgid "The OTA backend did not respond."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:41
+#: htdocs/luci-static/resources/view/ota/configuration.js:40
 msgid "The URL has to start with http:// or https://."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:61
+#: htdocs/luci-static/resources/view/ota/configuration.js:56
 msgid "The acceleration site has to be a URL starting with http:// or https://."
 msgstr ""
 
@@ -446,7 +428,7 @@ msgstr ""
 msgid "The update index does not contain a firmware image for this device."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:30
+#: htdocs/luci-static/resources/view/ota/configuration.js:29
 msgid ""
 "The update index is a small JSON file that lists the firmware images "
 "available for each device. It is published by whoever builds the "
@@ -467,7 +449,7 @@ msgstr ""
 msgid "This firmware is up to date"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:33
+#: htdocs/luci-static/resources/view/ota/configuration.js:32
 msgid ""
 "URL of the JSON update index. It has to be reachable from the router "
 "itself, not from the browser."
@@ -486,11 +468,11 @@ msgstr ""
 msgid "Update index"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:32
+#: htdocs/luci-static/resources/view/ota/configuration.js:31
 msgid "Update index URL"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:86
+#: htdocs/luci-static/resources/view/ota/configuration.js:81
 msgid "Use IPv4 only"
 msgstr ""
 
@@ -498,7 +480,7 @@ msgstr ""
 msgid "Usually takes 1-3 minutes."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:81
+#: htdocs/luci-static/resources/view/ota/configuration.js:76
 msgid "Validate the image before installing"
 msgstr ""
 
@@ -515,7 +497,7 @@ msgstr ""
 msgid "Writing the system partition"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:68
+#: htdocs/luci-static/resources/view/ota/configuration.js:63
 msgid "detect automatically"
 msgstr ""
 
