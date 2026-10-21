@@ -42,7 +42,6 @@ return view.extend({
 			return true;
 		};
 
-		// One field: pick a mirror from the list or type any URL.
 		o = s.option(form.Value, 'download_proxy', _('Download acceleration site'),
 			_('Choose the GitHub proxy acceleration site.'));
 		o.placeholder = presets[0];
@@ -91,20 +90,70 @@ return view.extend({
 		const rendered = m.render();
 
 		return Promise.resolve(rendered).then((node) => {
-			const listId = 'ota-download-proxy-presets';
-			const input = node.querySelector('input[id$="download_proxy"], input[name$="download_proxy"]');
+			const input = node.querySelector('input[id$="download_proxy"]');
 
-			if (input) {
-				const list = E('datalist', { 'id': listId });
+			if (!input)
+				return node;
 
-				presets.forEach((url) => list.appendChild(E('option', { 'value': url })));
-				node.appendChild(list);
+			// The value stays in the hidden input, the select is just a nicer
+			// way to pick one of the known mirrors. Choosing "custom" reveals
+			// the input again, in the same row.
+			const field = input.parentNode;
+			const custom = '__custom__';
 
-				// The browser already draws a dropdown button for inputs with a
-				// list attribute; adding our own marker drew a second chevron.
-				input.setAttribute('list', listId);
-				input.setAttribute('autocomplete', 'off');
-			}
+			field.style.display = 'flex';
+			field.style.alignItems = 'center';
+			field.style.gap = '.5em';
+			field.style.flexWrap = 'wrap';
+
+			const select = E('select', { 'class': 'cbi-input-select', 'style': 'min-width: 15em; flex: 0 0 auto' });
+
+			presets.forEach((url) => select.appendChild(E('option', { 'value': url }, url)));
+			select.appendChild(E('option', { 'value': custom }, _('Custom')));
+
+			const showCustom = (focus) => {
+				select.value = custom;
+				input.style.display = '';
+				input.style.flex = '1 1 12em';
+
+				if (focus)
+					input.focus();
+			};
+
+			const showPreset = (url) => {
+				select.value = url;
+				input.value = url;
+				input.style.display = 'none';
+			};
+
+			select.addEventListener('change', () => {
+				if (select.value === custom)
+					showCustom(true);
+				else
+					showPreset(select.value);
+			});
+
+			input.addEventListener('input', () => {
+				const v = input.value.trim();
+
+				if (v === '')
+					select.value = custom;
+				else if (presets.indexOf(v) >= 0)
+					select.value = v;
+				else
+					select.value = custom;
+			});
+
+			field.insertBefore(select, input);
+
+			const current = (input.value || '').trim();
+
+			if (presets.indexOf(current) >= 0)
+				showPreset(current);
+			else if (current === '')
+				showPreset(presets[0]);
+			else
+				showCustom();
 
 			return node;
 		});
