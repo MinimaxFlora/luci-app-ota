@@ -100,31 +100,10 @@ return view.extend({
 				presets.forEach((url) => list.appendChild(E('option', { 'value': url })));
 				node.appendChild(list);
 
+				// The browser already draws a dropdown button for inputs with a
+				// list attribute; adding our own marker drew a second chevron.
 				input.setAttribute('list', listId);
 				input.setAttribute('autocomplete', 'off');
-				input.classList.add('ota-combo');
-
-				// Make the chevron behave like a real dropdown: a click on the
-				// right edge opens the list, a click elsewhere still edits.
-				input.addEventListener('click', (ev) => {
-					const rect = input.getBoundingClientRect();
-
-					if (ev.clientX > rect.right - 28 && typeof input.showPicker === 'function') {
-						try {
-							input.showPicker();
-						}
-						catch (e) {
-							/* not a user gesture, ignore */
-						}
-					}
-				});
-
-				// Draw the chevron ourselves: the native datalist marker is
-				// invisible in several themes.
-				node.insertBefore(E('style', {}, [
-					'.ota-combo { padding-right: 1.9em; background-repeat: no-repeat; background-position: right .55em center;' +
-					' background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'%3E%3Cpath d=\'M1 1l4 4 4-4\' fill=\'none\' stroke=\'%23888\' stroke-width=\'1.6\'/%3E%3C/svg%3E"); }'
-				].join('\n')), node.firstChild);
 			}
 
 			return node;
