@@ -22,6 +22,8 @@ import { cursor } from 'uci';
 
 const PLUGIN_VERSION = '1.0.0';
 
+const DEFAULT_DOWNLOAD_PROXY = 'https://gh-proxy.kejizero.xyz';
+
 const RUN_DIR     = '/var/run/ota';
 const DL_DIR      = RUN_DIR + '/dl';
 const IMAGE       = DL_DIR + '/firmware.img';
@@ -365,7 +367,14 @@ function load_config() {
 
 	cfg.api_url = or_str(c.get('ota', 'config', 'api_url'), '');
 	cfg.device = or_str(c.get('ota', 'config', 'device'), '');
-	cfg.download_proxy = or_str(c.get('ota', 'config', 'download_proxy'), '');
+	// Upgraded installations keep their old /etc/config/ota, which has no
+	// download_proxy entry at all; those should get the proxy as well, while
+	// an explicit empty value still means "download straight from GitHub".
+	const proxy_cfg = c.get('ota', 'config', 'download_proxy');
+
+	cfg.download_proxy = (proxy_cfg == null)
+		? DEFAULT_DOWNLOAD_PROXY
+		: or_str(proxy_cfg, '');
 	cfg.auto_check = cfg_flag(c, 'auto_check', true);
 	cfg.keep_settings = cfg_flag(c, 'keep_settings', true);
 	cfg.verify_image = cfg_flag(c, 'verify_image', true);
