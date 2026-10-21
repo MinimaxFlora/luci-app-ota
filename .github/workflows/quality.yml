@@ -72,16 +72,23 @@ jobs:
           from pathlib import Path
 
           config = Path("root/etc/config/ota").read_text(encoding="utf-8")
-          required = ["api_url", "device", "auto_check", "keep_settings",
-                      "verify_image", "ipv4_only", "allow_insecure"]
+          required = ["api_url", "device", "download_proxy", "auto_check",
+                      "keep_settings", "verify_image", "ipv4_only", "allow_insecure"]
           missing = [opt for opt in required if f"option {opt} " not in config]
           if missing:
               raise SystemExit(f"root/etc/config/ota is missing: {missing}")
 
-          # Every option offered in the configuration view must exist in the
-          # default config, otherwise the form starts out empty.
-          view = Path("htdocs/luci-static/resources/view/ota/configuration.js").read_text(encoding="utf-8")
-          options = re.findall(r"form\.(?:Value|Flag),\s*'([a-z0-9_]+)'", view)
+          # Every option offered in a configuration view must exist in the
+          # default config, otherwise the form starts out empty. Scan the whole
+          # view directory so renaming a view file cannot break this check.
+          views = sorted(Path("htdocs/luci-static/resources/view/ota").glob("*.js"))
+          if not views:
+              raise SystemExit("no view files found under htdocs/.../view/ota")
+
+          options = []
+          for view in views:
+              options += re.findall(r"form\.(?:Value|Flag),\s*'([a-z0-9_]+)'",
+                                    view.read_text(encoding="utf-8"))
           unknown = [opt for opt in options if f"option {opt} " not in config]
           if unknown:
               raise SystemExit(f"configuration view offers unknown options: {unknown}")
