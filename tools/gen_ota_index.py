@@ -332,8 +332,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--existing-url", default="", help="existing index URL to merge into")
     parser.add_argument("--url-base", default="", help="override the asset URL prefix")
     parser.add_argument("--variant", default="", help="variant suffix, e.g. efi or bios")
-    parser.add_argument("--aliases", choices=("all", "canonical"), default="all",
-                        help="publish every device alias, or only the device name (default: all)")
+    parser.add_argument("--aliases", choices=("all", "canonical"), default="canonical",
+                        help="publish only the device name (default) or every alias the plugin may probe")
     parser.add_argument("--history", default="",
                         help="history.json to append this release to (used by the download page)")
     parser.add_argument("--max-history", type=int, default=DEFAULT_HISTORY_LIMIT,

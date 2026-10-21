@@ -492,17 +492,42 @@ function local_info() {
 // Append "key" to the candidate list unless it is empty or already present.
 // Kept as a plain function (instead of a nested closure) to stay compatible
 // with older ucode builds.
-function add_key(keys, seen, key) {
+// ucode does not hoist function declarations, so the helper comes first.
+function twin_key(key) {
+	if (key == '' || index(key, '/') >= 0)
+		return '';
+
+	if (index(key, ',') >= 0)
+		return replace(key, ',', '_');
+
+	if (index(key, '_') >= 0)
+		return replace(key, '_', ',');
+
+	return '';
+}
+
+function add_key(keys, seen, key, derive) {
 	if (key == null)
 		return;
 
 	const v = trim(S(key));
 
-	if (v == '' || seen[v] == true)
-		return;
+	if (v != '' && seen[v] != true) {
+		seen[v] = true;
+		keys[length(keys)] = v;
+	}
 
-	seen[v] = true;
-	keys[length(keys)] = v;
+	// "ruijie,rg-x60-new" and "ruijie_rg-x60-new" name the same board: the DT
+	// compatible string and the profile name. The index only has to contain one
+	// of them, so every device-ish key also tries its twin spelling.
+	if (derive == true) {
+		const twin = twin_key(v);
+
+		if (twin != '' && seen[twin] != true) {
+			seen[twin] = true;
+			keys[length(keys)] = twin;
+		}
+	}
 }
 
 // x86 firmware ships separate legacy BIOS and EFI images, so the index may
@@ -525,29 +550,29 @@ function device_keys(cfg, local) {
 	const seen = {};
 
 	if (cfg != null && cfg.device != '')
-		add_key(keys, seen, cfg.device);
+		add_key(keys, seen, cfg.device, true);
 
 	if (local != null && local.device != '')
-		add_key(keys, seen, local.device);
+		add_key(keys, seen, local.device, true);
 
 	if (local != null && local.model != '')
-		add_key(keys, seen, local.model);
+		add_key(keys, seen, local.model, true);
 
 	// Prefer the concrete board over the target: "ruijie,rg-x60-new" must win
 	// over "mediatek/filogic", otherwise a target wide entry could match.
-	add_key(keys, seen, read_trim('/tmp/sysinfo/board_name'));
+	add_key(keys, seen, read_trim('/tmp/sysinfo/board_name'), true);
 
 	const board = json_load('/etc/board.json');
 
 	if (type(board) == 'object' && board.model != null && board.model.id != null)
-		add_key(keys, seen, board.model.id);
+		add_key(keys, seen, board.model.id, true);
 
 	if (local != null)
 		add_key(keys, seen, local.board);
 
 	if (local != null) {
-		add_key(keys, seen, vendor_device_key(local.device));
-		add_key(keys, seen, vendor_device_key(read_trim('/tmp/sysinfo/board_name')));
+		add_key(keys, seen, vendor_device_key(local.device), true);
+		add_key(keys, seen, vendor_device_key(read_trim('/tmp/sysinfo/board_name')), true);
 		add_key(keys, seen, local.arch);
 
 		const probe = lc(S(local.board) + ' ' + S(local.arch));
