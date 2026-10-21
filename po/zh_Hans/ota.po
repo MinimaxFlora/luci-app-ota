@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-21 19:58+0800\n"
+"PO-Revision-Date: 2026-10-21 20:00+0800\n"
 "Last-Translator: MinimaxFlora <MinimaxFlora@users.noreply.github.com>\n"
 "Language-Team: Chinese\n"
 "Language: zh_Hans\n"
@@ -133,6 +133,10 @@ msgstr "无法开始安装：%s"
 #: htdocs/luci-static/resources/view/ota/overview.js:508
 msgid "Current firmware"
 msgstr "当前固件"
+
+#: htdocs/luci-static/resources/view/ota/configuration.js:108
+msgid "Custom"
+msgstr "自定义"
 
 #: htdocs/luci-static/resources/view/ota/configuration.js:60
 #: htdocs/luci-static/resources/view/ota/overview.js:494
