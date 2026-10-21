@@ -140,6 +140,12 @@ apk add --allow-untrusted luci-app-ota-*.apk
 | `label` | 否 | 设备的人类可读名称，下载页显示用 |
 | `variant` | 否 | x86 变体（`bios` / `efi`），下载页显示用 |
 
+> 同一台设备可能出现两个 key（`ruijie_rg-x60-new` 和 `ruijie,rg-x60-new`）：前一个来自构建
+> 元数据里的 profile 名，后一个来自设备树 model。插件按自己的探测顺序取第一个命中的 key，
+> 两个都写只是为了兼容**没有** `/etc/ota/build.json` 的旧固件（它们只能靠设备树名匹配，
+> 第一次 OTA 升级正需要这条兜底）。觉得冗余可以给 `gen_ota_index.py` 加
+> `--aliases canonical`，只写 profile 名。
+
 同时也兼容 `luci-app-ota`（sbwml 版）的扁平格式，并自动取数组里 `build_date` 最大的一项：
 
 ```json

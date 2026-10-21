@@ -208,8 +208,13 @@ def load_existing(path: str | None, url: str | None) -> dict:
 
 
 def device_keys(device: str, target: str, board: str, variant: str,
-                include_plain: bool = True) -> list[str]:
-    """Keys the firmware is going to look up, most specific first."""
+                include_plain: bool = True, aliases: bool = True) -> list[str]:
+    """Keys the firmware is going to look up, most specific first.
+
+    With ``aliases=False`` only the device name itself is published. That keeps
+    the index small, but firmware built before the OTA metadata existed can
+    only fall back to the device tree name, so the default keeps every alias.
+    """
     keys: list[str] = []
 
     def add(key: str, suffix: str = "") -> None:
@@ -220,17 +225,17 @@ def device_keys(device: str, target: str, board: str, variant: str,
             keys.append(value)
 
     base: list[str] = []
-    for value in (board, device):
+    for value in ((board, device) if aliases else (device,)):
         if value and value not in base:
             base.append(value)
     # "ruijie_rg-x60-new" is the profile name, "ruijie,rg-x60-new" the DT model
-    if device and "_" in device and "x86" not in device.lower():
+    if aliases and device and "_" in device and "x86" not in device.lower():
         vendor, _, rest = device.partition("_")
         if vendor and rest:
             derived = f"{vendor},{rest}"
             if derived not in base:
                 base.append(derived)
-    if "x86" in f"{target} {device}".lower():
+    if aliases and "x86" in f"{target} {device}".lower():
         for value in ("x86_64", "x86/64", "generic"):
             if value not in base:
                 base.append(value)
@@ -327,6 +332,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--existing-url", default="", help="existing index URL to merge into")
     parser.add_argument("--url-base", default="", help="override the asset URL prefix")
     parser.add_argument("--variant", default="", help="variant suffix, e.g. efi or bios")
+    parser.add_argument("--aliases", choices=("all", "canonical"), default="all",
+                        help="publish every device alias, or only the device name (default: all)")
     parser.add_argument("--history", default="",
                         help="history.json to append this release to (used by the download page)")
     parser.add_argument("--max-history", type=int, default=DEFAULT_HISTORY_LIMIT,
@@ -469,7 +476,8 @@ def main(argv: list[str] | None = None) -> int:
         if label:
             entry["label"] = label
 
-        keys = device_keys(device, target, args.board, variant, include_plain=primary)
+        keys = device_keys(device, target, args.board, variant, include_plain=primary,
+                           aliases=(args.aliases == "all"))
         for key in keys:
             devices[key] = dict(entry)
             if key not in written:
