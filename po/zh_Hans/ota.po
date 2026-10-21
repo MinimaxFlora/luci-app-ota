@@ -208,9 +208,13 @@ msgstr "固件版本"
 msgid "Grant access to the OTA firmware update functionality"
 msgstr "授予在线升级功能的访问权限"
 
-#: htdocs/luci-static/resources/view/ota/overview.js:1048
-msgid "If the page does not come back, open %s manually."
-msgstr "如果页面没有自动恢复，请手动打开 %s"
+#: htdocs/luci-static/resources/view/ota/update.js
+msgid "If the page does not come back, open this address manually:"
+msgstr "如果页面没有自动恢复，请手动打开这个地址："
+
+#: htdocs/luci-static/resources/view/ota/update.js
+msgid "The device did not reboot. Check the sysupgrade log."
+msgstr "设备没有重启，请查看 sysupgrade 日志。"
 
 #: htdocs/luci-static/resources/view/ota/overview.js:748
 #: htdocs/luci-static/resources/view/ota/overview.js:873

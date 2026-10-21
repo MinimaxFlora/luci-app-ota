@@ -206,7 +206,11 @@ msgid "Grant access to the OTA firmware update functionality"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/overview.js:1048
-msgid "If the page does not come back, open %s manually."
+msgid "If the page does not come back, open this address manually:"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/update.js
+msgid "The device did not reboot. Check the sysupgrade log."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/overview.js:748

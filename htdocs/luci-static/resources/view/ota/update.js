@@ -322,6 +322,32 @@ function addError(res) {
 /* view                                                               */
 /* ------------------------------------------------------------------ */
 
+/* A firmware flash kills the web server that served this page. Remember that
+ * one was started, so the overlay survives a reload or a browser that lost the
+ * Wi-Fi link and does not leave the user staring at a stale update page. */
+var FLASH_KEY = 'ota-flash-started';
+var FLASH_MAX_MS = 15 * 60 * 1000;
+
+function flashStartedAt() {
+	try {
+		var raw = window.sessionStorage.getItem(FLASH_KEY);
+		var when = raw ? parseInt(raw, 10) : 0;
+
+		if (when > 0 && (Date.now() - when) < FLASH_MAX_MS)
+			return when;
+	}
+	catch (e) { }
+
+	return 0;
+}
+
+function clearFlashMark() {
+	try {
+		window.sessionStorage.removeItem(FLASH_KEY);
+	}
+	catch (e) { }
+}
+
 return view.extend({
 	info: null,
 	check: null,
@@ -396,7 +422,28 @@ return view.extend({
 			window.setTimeout(() => this.handleCheck(null, true), 100);
 		}
 
+		this.resumeFlashing();
+
 		return container;
+	},
+
+	/* The flash started in an earlier page load: keep showing the overlay and
+	 * go straight to "wait for the device", instead of pretending nothing is
+	 * happening while the router reboots. */
+	resumeFlashing: function() {
+		var startedAt = flashStartedAt();
+
+		if (!startedAt || this.flashNode)
+			return;
+
+		this.unloadGuard = (e) => {
+			e.preventDefault();
+			e.returnValue = _('The firmware is being written, please do not leave this page.');
+			return e.returnValue;
+		};
+
+		window.addEventListener('beforeunload', this.unloadGuard);
+		this.showFlashing(startedAt, true);
 	},
 
 	renderStyle: function() {
@@ -925,6 +972,9 @@ return view.extend({
 
 		return callApply(keep).then((res) => {
 			if (!res || !res.ok) {
+				// Nothing was written, so drop both the overlay and the mark
+				// that would bring it back after a reload.
+				clearFlashMark();
 				this.hideFlashing();
 				addError(res);
 				this.renderState();
@@ -933,10 +983,11 @@ return view.extend({
 			}
 
 			this.status = { state: 'installing' };
-		}).catch((err) => {
-			this.hideFlashing();
-			ui.addNotification(null, E('p', {}, _('Could not start the installation: %s').format(err.message || err)), 'danger');
-			this.renderState();
+		}).catch(() => {
+			// sysupgrade replaces the running system, so the request that
+			// started it often dies without an answer. That is the normal
+			// path, not a failure: keep the overlay and wait for the reboot.
+			this.status = { state: 'installing' };
 		});
 	},
 
@@ -956,7 +1007,7 @@ return view.extend({
 		return badge;
 	},
 
-	showFlashing: function() {
+	showFlashing: function(startedAt, resume) {
 		const steps = {
 			write: E('li', {}, _('Writing the system partition')),
 			verify: E('li', {}, _('Verifying the image')),
@@ -994,24 +1045,49 @@ return view.extend({
 			});
 		};
 
-		setPhase(0);
+		const phaseFor = (seconds) => {
+			if (seconds < 20)
+				return 0;
+			if (seconds < 40)
+				return 1;
+			if (seconds < 55)
+				return 2;
 
-		let waited = 0;
+			return 3;
+		};
+
+		if (!startedAt) {
+			startedAt = Date.now();
+
+			try {
+				window.sessionStorage.setItem(FLASH_KEY, String(startedAt));
+			}
+			catch (e) { }
+		}
+
+		let waited = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
+
+		setPhase(phaseFor(waited));
+		elapsed.textContent = fmtDuration(waited);
+
+		const startWaiting = () => {
+			this.stopFlashTimer();
+			this.waitForDevice(steps.reconnect, card, resume);
+		};
+
+		if (waited >= 65) {
+			startWaiting();
+
+			return;
+		}
 
 		this.flashTimer = window.setInterval(() => {
 			waited++;
 			elapsed.textContent = fmtDuration(waited);
+			setPhase(phaseFor(waited));
 
-			if (waited === 20)
-				setPhase(1);
-			else if (waited === 40)
-				setPhase(2);
-			else if (waited === 55)
-				setPhase(3);
-			else if (waited === 65) {
-				this.stopFlashTimer();
-				this.waitForDevice(steps.reconnect, card);
-			}
+			if (waited >= 65)
+				startWaiting();
 		}, 1000);
 	},
 
@@ -1040,17 +1116,38 @@ return view.extend({
 		document.body.classList.remove('ota-flashing');
 	},
 
+	/* Leave the overlay for good and hand the browser over to the device.
+	 * The beforeunload guard has to go first, otherwise the browser asks for
+	 * confirmation and the automatic redirect never happens. */
+	finishFlash: function(url) {
+		clearFlashMark();
+
+		if (this.unloadGuard) {
+			window.removeEventListener('beforeunload', this.unloadGuard);
+			this.unloadGuard = null;
+		}
+
+		window.location.replace(url);
+	},
+
 	/* Wait for the device to go away and come back, then reload the page.
 	 * Waiting for the "away" phase first avoids reloading while the old
-	 * system is still answering. */
-	waitForDevice: function(stepNode, card) {
+	 * system is still answering. When the overlay was restored after a reload
+	 * the device may already be back, so an answer is enough. */
+	waitForDevice: function(stepNode, card, resume) {
+		// After a reboot the LuCI session is gone, so land on the device root:
+		// the browser follows it to the login page instead of a dead view.
 		const target = window.location.protocol + '//' + window.location.host;
-		const url = target + L.url('admin/system/ota/overview');
-		const hint = E('p', { 'class': 'ota-overlay-foot' }, _('If the page does not come back, open %s manually.').format(url));
+		const url = target;
+		const hint = E('p', { 'class': 'ota-overlay-foot' }, [
+			_('If the page does not come back, open this address manually:') + ' ',
+			E('a', { 'href': url }, url)
+		]);
 
 		if (card)
 			card.appendChild(hint);
 
+		const started = Date.now();
 		let wentDown = false;
 
 		const probe = () => {
@@ -1058,14 +1155,33 @@ return view.extend({
 
 			img.onload = () => {
 				if (!wentDown) {
+					if (resume) {
+						// Restored overlay and the device answers: the flash
+						// has finished while the page was gone.
+						this.hideFlashing();
+						this.finishFlash(url);
+
+						return;
+					}
+
+					if ((Date.now() - started) > 120000) {
+						// It never went away, so nothing was flashed.
+						clearFlashMark();
+						this.hideFlashing();
+						ui.addNotification(null, E('p', {}, _('The device did not reboot. Check the sysupgrade log.')), 'warning');
+
+						return;
+					}
+
 					window.setTimeout(probe, 3000);
+
 					return;
 				}
 
 				if (stepNode)
 					stepNode.className = 'done';
 
-				window.location.replace(url);
+				this.finishFlash(url);
 			};
 
 			img.onerror = () => {
