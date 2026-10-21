@@ -401,7 +401,9 @@ return view.extend({
 			'.ota-ok { color: #2e7d32; }',
 			'.ota-warn { color: #ef6c00; }',
 			'.ota-mono { font-family: monospace; word-break: break-all; }',
-			'.ota-actions { margin: .9em 0 1.2em; padding-left: 1.1em; display: flex; gap: .5em; flex-wrap: wrap; }',
+			/* bottom padding, not margin: a margin on the last child collapses
+			 * out of the section and the button ends up flush with the edge */
+			'.ota-actions { margin: .9em 0 0; padding: 0 0 1.2em 1.4em; display: flex; gap: .5em; flex-wrap: wrap; }',
 			'.cbi-section > .ota-muted { padding-left: 1.1em; }',
 			'.ota-muted { color: #666; font-size: 95%; }',
 
@@ -410,9 +412,9 @@ return view.extend({
 			'.ota-option input[type="checkbox"] { margin: 0; flex: none; }',
 			'.ota-option label { margin: 0; cursor: pointer; }',
 
-			/* progress bar: the track has to line up with the text above it,
-			 * so it keeps the same 1.1em inset on both sides */
-			'.ota-progress { margin: .5em 0 1.1em; padding: 0 1.1em; box-sizing: border-box; }',
+			/* 1.4em matches the theme's heading inset, so the track lines up
+			 * with the title above it and keeps the same gap on both sides */
+			'.ota-progress { margin: .5em 0 1.1em; padding: 0 1.4em; box-sizing: border-box; }',
 			'.ota-track { position: relative; height: 18px; border-radius: 999px; background: rgba(128,128,128,.16); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.10); }',
 			'.ota-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px;' +
 				' background-image: linear-gradient(90deg, #2e9d72, #3fbb8b 45%, #6fd3a8); background-size: 200% 100%;' +
