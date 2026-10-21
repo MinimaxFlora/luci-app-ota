@@ -95,65 +95,29 @@ return view.extend({
 			if (!input)
 				return node;
 
-			// The value stays in the hidden input, the select is just a nicer
-			// way to pick one of the known mirrors. Choosing "custom" reveals
-			// the input again, in the same row.
-			const field = input.parentNode;
-			const custom = '__custom__';
+			// Same idea as passwall's DynamicList: one plain text field with a
+			// list of known values attached, so you either type a URL or pick
+			// one from the list. No extra widget next to it.
+			const list = E('datalist', { 'id': 'ota-download-proxy-presets' });
 
-			field.style.display = 'flex';
-			field.style.alignItems = 'center';
-			field.style.gap = '.5em';
-			field.style.flexWrap = 'wrap';
+			presets.forEach((url) => list.appendChild(E('option', { 'value': url })));
+			node.appendChild(list);
 
-			const select = E('select', { 'class': 'cbi-input-select', 'style': 'min-width: 15em; flex: 0 0 auto' });
+			input.setAttribute('list', 'ota-download-proxy-presets');
+			input.setAttribute('autocomplete', 'off');
 
-			presets.forEach((url) => select.appendChild(E('option', { 'value': url }, url)));
-			select.appendChild(E('option', { 'value': custom }, _('Custom')));
+			// Line the field up with the update index URL field above it.
+			const reference = node.querySelector('input[id$="api_url"]');
 
-			const showCustom = (focus) => {
-				select.value = custom;
-				input.style.display = '';
-				input.style.flex = '1 1 12em';
+			if (reference) {
+				const width = Math.round(reference.getBoundingClientRect().width);
 
-				if (focus)
-					input.focus();
-			};
-
-			const showPreset = (url) => {
-				select.value = url;
-				input.value = url;
-				input.style.display = 'none';
-			};
-
-			select.addEventListener('change', () => {
-				if (select.value === custom)
-					showCustom(true);
-				else
-					showPreset(select.value);
-			});
-
-			input.addEventListener('input', () => {
-				const v = input.value.trim();
-
-				if (v === '')
-					select.value = custom;
-				else if (presets.indexOf(v) >= 0)
-					select.value = v;
-				else
-					select.value = custom;
-			});
-
-			field.insertBefore(select, input);
-
-			const current = (input.value || '').trim();
-
-			if (presets.indexOf(current) >= 0)
-				showPreset(current);
-			else if (current === '')
-				showPreset(presets[0]);
-			else
-				showCustom();
+				if (width > 0) {
+					input.style.width = width + 'px';
+					input.style.maxWidth = width + 'px';
+					input.style.boxSizing = 'border-box';
+				}
+			}
 
 			return node;
 		});

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 19:48+0800\n"
+"POT-Creation-Date: 2026-10-21 19:58+0800\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -129,10 +129,6 @@ msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/overview.js:508
 msgid "Current firmware"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/ota/configuration.js:112
-msgid "Custom"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/configuration.js:60
