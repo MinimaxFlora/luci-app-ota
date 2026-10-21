@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 02:40+0800\n"
+"POT-Creation-Date: 2026-10-21 20:14+0800\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -15,54 +15,54 @@ msgstr ""
 msgid "/sbin/sysupgrade is not available on this system."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:591
+#: htdocs/luci-static/resources/view/ota/overview.js:623
 msgid "A new firmware is available"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:774
+#: htdocs/luci-static/resources/view/ota/overview.js:806
 msgid "A new firmware is available."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:57
+#: htdocs/luci-static/resources/view/ota/settings.js:85
 msgid "Allow insecure connections"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:58
+#: htdocs/luci-static/resources/view/ota/settings.js:86
 msgid ""
 "Allow plain http:// URLs and skip TLS certificate verification. Only "
 "enable this if you really have to."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:24
+#: htdocs/luci-static/resources/view/ota/settings.js:37
 msgid "An update index URL is required."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:482
+#: htdocs/luci-static/resources/view/ota/overview.js:510
 msgid "Architecture"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:575
+#: htdocs/luci-static/resources/view/ota/overview.js:604
 msgid "Available build"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:573
+#: htdocs/luci-static/resources/view/ota/overview.js:602
 msgid "Available version"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:480
-#: htdocs/luci-static/resources/view/ota/overview.js:851
+#: htdocs/luci-static/resources/view/ota/overview.js:508
+#: htdocs/luci-static/resources/view/ota/overview.js:883
 msgid "Build date"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:857
+#: htdocs/luci-static/resources/view/ota/overview.js:889
 msgid "Cancel"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:637
+#: htdocs/luci-static/resources/view/ota/overview.js:669
 msgid "Cancel download"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:832
+#: htdocs/luci-static/resources/view/ota/overview.js:864
 msgid "Cancel failed: %s"
 msgstr ""
 
@@ -72,17 +72,17 @@ msgid ""
 "neither a build date nor a version."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:604
+#: htdocs/luci-static/resources/view/ota/overview.js:636
 msgid "Changelog"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:561
-#: htdocs/luci-static/resources/view/ota/overview.js:598
-#: htdocs/luci-static/resources/view/ota/overview.js:743
+#: htdocs/luci-static/resources/view/ota/overview.js:589
+#: htdocs/luci-static/resources/view/ota/overview.js:630
+#: htdocs/luci-static/resources/view/ota/overview.js:775
 msgid "Check again"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:791
+#: htdocs/luci-static/resources/view/ota/overview.js:823
 msgid "Check failed: %s"
 msgstr ""
 
@@ -90,24 +90,28 @@ msgstr ""
 msgid "Check for new firmware, download it and install it with sysupgrade."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:542
+#: htdocs/luci-static/resources/view/ota/overview.js:570
 msgid "Check for updates"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:37
+#: htdocs/luci-static/resources/view/ota/settings.js:65
 msgid "Check on page load"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:763
+#: htdocs/luci-static/resources/view/ota/overview.js:795
 msgid "Checking for updates…"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:853
+#: htdocs/luci-static/resources/view/ota/settings.js:46
+msgid "Choose the GitHub proxy acceleration site."
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js:885
 #: root/usr/share/luci/menu.d/luci-app-ota.json:24
 msgid "Configuration"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:10
+#: htdocs/luci-static/resources/view/ota/settings.js:23
 msgid ""
 "Configure where LuCI looks for firmware updates and how they are "
 "handled."
@@ -119,69 +123,81 @@ msgid ""
 "connection."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:889
+#: htdocs/luci-static/resources/view/ota/overview.js:937
 msgid "Could not start the installation: %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:497
+#: htdocs/luci-static/resources/view/ota/overview.js:525
 msgid "Current firmware"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:32
-#: htdocs/luci-static/resources/view/ota/overview.js:483
+#: htdocs/luci-static/resources/view/ota/settings.js:107
+msgid "Custom"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js:511
+#: htdocs/luci-static/resources/view/ota/settings.js:60
 msgid "Device key"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:720
+#: htdocs/luci-static/resources/view/ota/overview.js:752
 msgid "Discard download"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:908
+#: htdocs/luci-static/resources/view/ota/overview.js:972
 msgid "Do not power off the device."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:742
+#: htdocs/luci-static/resources/view/ota/settings.js:45
+msgid "Download acceleration site"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js:774
 msgid "Download again"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:1023
-#: htdocs/luci-static/resources/view/ota/overview.js:830
+#: htdocs/luci-static/resources/view/ota/overview.js:1114
+#: htdocs/luci-static/resources/view/ota/overview.js:862
 msgid "Download canceled."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:819
+#: htdocs/luci-static/resources/view/ota/overview.js:851
 msgid "Download failed: %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:597
+#: htdocs/luci-static/resources/view/ota/overview.js:629
 msgid "Download firmware"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:624
+#: htdocs/luci-static/resources/view/ota/overview.js:606
+msgid "Download site"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js:656
 msgid "Downloading firmware"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:914
+#: htdocs/luci-static/resources/view/ota/overview.js:978
 msgid "Elapsed"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:577
+#: htdocs/luci-static/resources/view/ota/overview.js:609
 msgid "File"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:689
+#: htdocs/luci-static/resources/view/ota/overview.js:721
 msgid "Firmware downloaded and verified"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:1017
+#: htdocs/luci-static/resources/view/ota/overview.js:1108
 msgid "Firmware downloaded and verified."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:537
+#: htdocs/luci-static/resources/view/ota/overview.js:565
 msgid "Firmware update"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:479
+#: htdocs/luci-static/resources/view/ota/overview.js:507
 msgid "Firmware version"
 msgstr ""
 
@@ -189,40 +205,40 @@ msgstr ""
 msgid "Grant access to the OTA firmware update functionality"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:957
+#: htdocs/luci-static/resources/view/ota/overview.js:1048
 msgid "If the page does not come back, open %s manually."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:716
-#: htdocs/luci-static/resources/view/ota/overview.js:841
+#: htdocs/luci-static/resources/view/ota/overview.js:748
+#: htdocs/luci-static/resources/view/ota/overview.js:873
 msgid "Install firmware"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:574
+#: htdocs/luci-static/resources/view/ota/overview.js:603
 msgid "Installed build"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:572
+#: htdocs/luci-static/resources/view/ota/overview.js:601
 msgid "Installed version"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:558
+#: htdocs/luci-static/resources/view/ota/overview.js:586
 msgid "Installed version: %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:906
+#: htdocs/luci-static/resources/view/ota/overview.js:970
 msgid "Installing firmware"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:710
+#: htdocs/luci-static/resources/view/ota/overview.js:742
 msgid "Keep settings and retain the current configuration"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:42
+#: htdocs/luci-static/resources/view/ota/settings.js:70
 msgid "Keep settings by default"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:33
+#: htdocs/luci-static/resources/view/ota/settings.js:61
 msgid ""
 "Key that identifies this device in the update index. Leave empty to "
 "detect it automatically from the running firmware."
@@ -232,18 +248,18 @@ msgstr ""
 msgid "Keys in the index: %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:559
-#: htdocs/luci-static/resources/view/ota/overview.js:600
+#: htdocs/luci-static/resources/view/ota/overview.js:587
+#: htdocs/luci-static/resources/view/ota/overview.js:632
 msgid "Last checked: %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:48
+#: htdocs/luci-static/resources/view/ota/settings.js:76
 msgid ""
 "Let sysupgrade check the downloaded image for this device right after "
 "the download. A rejected image is discarded."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:38
+#: htdocs/luci-static/resources/view/ota/settings.js:66
 msgid ""
 "Look for a new firmware when the overview page is opened and the last "
 "check is older than ten minutes."
@@ -253,7 +269,7 @@ msgstr ""
 msgid "Looked up key(s): %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:478
+#: htdocs/luci-static/resources/view/ota/overview.js:506
 msgid "Model"
 msgstr ""
 
@@ -265,7 +281,7 @@ msgstr ""
 msgid "No update index URL is configured yet."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:540
+#: htdocs/luci-static/resources/view/ota/overview.js:568
 msgid "No update index has been configured for this firmware yet."
 msgstr ""
 
@@ -273,8 +289,8 @@ msgstr ""
 msgid "Not enough free space in /tmp to download this firmware."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:9
 #: htdocs/luci-static/resources/view/ota/overview.js:350
+#: htdocs/luci-static/resources/view/ota/settings.js:22
 #: root/usr/share/luci/menu.d/luci-app-ota.json:3
 msgid "OTA Firmware Update"
 msgstr ""
@@ -291,64 +307,69 @@ msgstr ""
 msgid "Please check for updates first."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:43
+#: htdocs/luci-static/resources/view/ota/settings.js:71
 msgid "Preselect the \"keep settings\" option before installing a firmware."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:539
+#: htdocs/luci-static/resources/view/ota/overview.js:567
 msgid "Press \"Check for updates\" to look for a new firmware."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:898
+#: htdocs/luci-static/resources/view/ota/overview.js:962
 msgid "Rebooting the device"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:899
+#: htdocs/luci-static/resources/view/ota/overview.js:963
 msgid "Reconnecting to the web interface"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:630
+#: htdocs/luci-static/resources/view/ota/overview.js:367
+#: htdocs/luci-static/resources/view/ota/overview.js:368
+msgid "Refresh"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js:662
 msgid "Remaining"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:53
+#: htdocs/luci-static/resources/view/ota/settings.js:81
 msgid ""
 "Restrict the index and firmware downloads to IPv4. Helps on networks "
 "with broken IPv6 connectivity."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:363
+#: htdocs/luci-static/resources/view/ota/overview.js:380
 msgid "Retry"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:578
-#: htdocs/luci-static/resources/view/ota/overview.js:700
+#: htdocs/luci-static/resources/view/ota/overview.js:610
+#: htdocs/luci-static/resources/view/ota/overview.js:732
 msgid "SHA256"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:14
+#: htdocs/luci-static/resources/view/ota/settings.js:27
 msgid "Settings"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:576
-#: htdocs/luci-static/resources/view/ota/overview.js:696
-#: htdocs/luci-static/resources/view/ota/overview.js:849
+#: htdocs/luci-static/resources/view/ota/overview.js:605
+#: htdocs/luci-static/resources/view/ota/overview.js:728
+#: htdocs/luci-static/resources/view/ota/overview.js:881
 msgid "Size"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:629
+#: htdocs/luci-static/resources/view/ota/overview.js:661
 msgid "Speed"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:864
+#: htdocs/luci-static/resources/view/ota/overview.js:904
 msgid "Start installation"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:618
+#: htdocs/luci-static/resources/view/ota/overview.js:650
 msgid "Starting download…"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:481
+#: htdocs/luci-static/resources/view/ota/overview.js:509
 msgid "Target"
 msgstr ""
 
@@ -356,19 +377,23 @@ msgstr ""
 msgid "The OTA backend could not be executed."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:359
+#: htdocs/luci-static/resources/view/ota/overview.js:376
 msgid "The OTA backend did not respond."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:27
+#: htdocs/luci-static/resources/view/ota/settings.js:40
 msgid "The URL has to start with http:// or https://."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:844
+#: htdocs/luci-static/resources/view/ota/settings.js:55
+msgid "The acceleration site has to be a URL starting with http:// or https://."
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js:876
 msgid "The device will be flashed and rebooted. This takes a few minutes."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:722
+#: htdocs/luci-static/resources/view/ota/overview.js:754
 msgid "The device will reboot after the firmware has been written."
 msgstr ""
 
@@ -384,7 +409,7 @@ msgstr ""
 msgid "The downloaded image failed the SHA256 verification and was discarded."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:885
+#: htdocs/luci-static/resources/view/ota/overview.js:919
 msgid "The firmware is being written, please do not leave this page."
 msgstr ""
 
@@ -398,7 +423,7 @@ msgid ""
 "safety reasons."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:910
+#: htdocs/luci-static/resources/view/ota/overview.js:974
 msgid "The page reconnects automatically once it is back."
 msgstr ""
 
@@ -412,7 +437,7 @@ msgstr ""
 msgid "The update index does not contain a firmware image for this device."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:16
+#: htdocs/luci-static/resources/view/ota/settings.js:29
 msgid ""
 "The update index is a small JSON file that lists the firmware images "
 "available for each device. It is published by whoever builds the "
@@ -429,11 +454,11 @@ msgid ""
 "from the version string."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:557
+#: htdocs/luci-static/resources/view/ota/overview.js:585
 msgid "This firmware is up to date"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:19
+#: htdocs/luci-static/resources/view/ota/settings.js:32
 msgid ""
 "URL of the JSON update index. It has to be reachable from the router "
 "itself, not from the browser."
@@ -444,60 +469,64 @@ msgstr ""
 msgid "Unknown error."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:730
+#: htdocs/luci-static/resources/view/ota/overview.js:762
 msgid "Update failed"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:484
+#: htdocs/luci-static/resources/view/ota/overview.js:512
 msgid "Update index"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:18
+#: htdocs/luci-static/resources/view/ota/settings.js:31
 msgid "Update index URL"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:52
+#: htdocs/luci-static/resources/view/ota/settings.js:80
 msgid "Use IPv4 only"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:917
+#: htdocs/luci-static/resources/view/ota/overview.js:981
 msgid "Usually takes 1-3 minutes."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:47
+#: htdocs/luci-static/resources/view/ota/settings.js:75
 msgid "Validate the image before installing"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:897
+#: htdocs/luci-static/resources/view/ota/overview.js:961
 msgid "Verifying the image"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:692
-#: htdocs/luci-static/resources/view/ota/overview.js:847
+#: htdocs/luci-static/resources/view/ota/overview.js:724
+#: htdocs/luci-static/resources/view/ota/overview.js:879
 msgid "Version"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:896
+#: htdocs/luci-static/resources/view/ota/overview.js:960
 msgid "Writing the system partition"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/configuration.js:34
+#: htdocs/luci-static/resources/view/ota/settings.js:62
 msgid "detect automatically"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:672
+#: htdocs/luci-static/resources/view/ota/overview.js:608
+msgid "direct (GitHub)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/overview.js:704
 msgid "downloading…"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:854
+#: htdocs/luci-static/resources/view/ota/overview.js:886
 msgid "erased"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:854
+#: htdocs/luci-static/resources/view/ota/overview.js:886
 msgid "kept"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:484
+#: htdocs/luci-static/resources/view/ota/overview.js:512
 msgid "not configured"
 msgstr ""
 
@@ -509,10 +538,10 @@ msgstr ""
 msgid "sysupgrade rejected the downloaded image (wrong device or broken file)."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:577
+#: htdocs/luci-static/resources/view/ota/overview.js:609
 msgid "unknown"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/overview.js:668
+#: htdocs/luci-static/resources/view/ota/overview.js:700
 msgid "verifying…"
 msgstr ""

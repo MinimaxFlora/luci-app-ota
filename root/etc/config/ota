@@ -7,6 +7,11 @@ config ota 'config'
 	# Optional manual device key. Leave empty to detect it automatically.
 	option device ''
 
+	# Acceleration site used for GitHub download URLs. It is used as a plain
+	# prefix: https://gh-proxy.kejizero.xyz/https://github.com/...
+	# Leave empty (or set "direct") to download straight from GitHub.
+	option download_proxy 'https://gh-proxy.kejizero.xyz'
+
 	# Check for updates automatically when the page is opened
 	option auto_check '1'
 

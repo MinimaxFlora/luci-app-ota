@@ -354,6 +354,23 @@ return view.extend({
 			this.body
 		]);
 
+		// Other LuCI pages show a refresh chip in the header while they poll;
+		// this page loads its data once, so put the same chip there manually.
+		const indicators = document.querySelector('#indicators');
+
+		if (indicators && !indicators.querySelector('[data-ota-refresh]')) {
+			const chip = E('span', {
+				'data-indicator': 'poll-status',
+				'data-clickable': 'true',
+				'data-style': 'active',
+				'data-ota-refresh': '1',
+				'title': _('Refresh')
+			}, _('Refresh'));
+
+			chip.addEventListener('click', () => window.location.reload());
+			indicators.appendChild(chip);
+		}
+
 		if (!this.info) {
 			this.body.appendChild(E('div', { 'class': 'cbi-section' }, [
 				E('p', {}, _('The OTA backend did not respond.')),
@@ -398,10 +415,13 @@ return view.extend({
 			'.ota-changelog pre { overflow-x: auto; padding: .5em; background: rgba(128,128,128,.12); border-radius: 6px; }',
 			'.ota-changelog code { background: rgba(128,128,128,.15); padding: 0 .2em; border-radius: 3px; }',
 			'.ota-changelog blockquote { border-left: 3px solid rgba(128,128,128,.4); margin: .5em 0; padding-left: .75em; color: #666; }',
+			'.ota-checking { margin: .5em 0 .9em 20px; padding: 0; }',
 			'.ota-ok { color: #2e7d32; }',
 			'.ota-warn { color: #ef6c00; }',
 			'.ota-mono { font-family: monospace; word-break: break-all; }',
-			'.ota-actions { margin-top: .9em; padding-left: 1.1em; display: flex; gap: .5em; flex-wrap: wrap; }',
+			/* bottom padding, not margin: a margin on the last child collapses
+			 * out of the section and the button ends up flush with the edge */
+			'.ota-actions { margin: .9em 0 0; padding: 0 0 1.2em 1.4em; display: flex; gap: .5em; flex-wrap: wrap; }',
 			'.cbi-section > .ota-muted { padding-left: 1.1em; }',
 			'.ota-muted { color: #666; font-size: 95%; }',
 
@@ -410,8 +430,9 @@ return view.extend({
 			'.ota-option input[type="checkbox"] { margin: 0; flex: none; }',
 			'.ota-option label { margin: 0; cursor: pointer; }',
 
-			/* progress bar */
-			'.ota-progress { margin: .5em 0 1.1em; }',
+			/* 1.4em matches the theme's heading inset, so the track lines up
+			 * with the title above it and keeps the same gap on both sides */
+			'.ota-progress { margin: .5em 0 1.1em; padding: 0 1.4em; box-sizing: border-box; }',
 			'.ota-track { position: relative; height: 18px; border-radius: 999px; background: rgba(128,128,128,.16); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.10); }',
 			'.ota-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px;' +
 				' background-image: linear-gradient(90deg, #2e9d72, #3fbb8b 45%, #6fd3a8); background-size: 200% 100%;' +
@@ -450,6 +471,14 @@ return view.extend({
 				' border: 6px solid rgba(255,255,255,.14); border-top-color: #6fd3a8; border-right-color: #3fbb8b;' +
 				' animation: otaSpin 1s linear infinite; }',
 			'@keyframes otaSpin { to { transform: rotate(360deg); } }',
+			/* GitHub badge: the mark stays upright, the ring around it spins */
+			'.ota-gh { position: relative; width: 78px; height: 78px; margin: 0 auto 20px; display: flex;' +
+				' align-items: center; justify-content: center; border-radius: 50%;' +
+				' background: rgba(255,255,255,.07); box-shadow: 0 0 0 6px rgba(111,211,168,.06); }',
+			'.ota-gh svg { width: 42px; height: 42px; display: block; fill: #fff; }',
+			'.ota-gh::before { content: ""; position: absolute; inset: -4px; border-radius: 50%;' +
+				' border: 3px solid rgba(255,255,255,.14); border-top-color: #6fd3a8; border-right-color: #3fbb8b;' +
+				' animation: otaSpin 1.1s linear infinite; }',
 			'.ota-overlay-card h2 { margin: 0 0 6px; padding: 0; font-size: 1.35rem; color: #fff;' +
 				' background: none; border: 0; box-shadow: none; }',
 			'.ota-overlay-sub { margin: 0; color: rgba(255,255,255,.7); font-size: 14px; }',
@@ -567,6 +596,7 @@ return view.extend({
 		const check = this.check || {};
 		const remote = check.remote || {};
 		const local = check.local || (this.info ? this.info.local : {}) || {};
+		const config = (this.info && this.info.config) ? this.info.config : {};
 
 		const rows = [
 			[ _('Installed version'), local.version || '—' ],
@@ -574,6 +604,9 @@ return view.extend({
 			[ _('Installed build'), buildDateCell(local) ],
 			[ _('Available build'), buildDateCell(remote) ],
 			[ _('Size'), remote.size ? fmtBytes(remote.size) : '—' ],
+			[ _('Download site'), config.download_proxy
+				? E('span', { 'class': 'ota-mono' }, config.download_proxy)
+				: _('direct (GitHub)') ],
 			[ _('File'), remote.file || _('unknown') ],
 			[ _('SHA256'), E('span', { 'class': 'ota-mono' }, remote.sha256 || '—') ]
 		];
@@ -760,7 +793,7 @@ return view.extend({
 		const section = this.body ? this.body.firstChild : null;
 
 		if (section && !silent)
-			setChildren(section, [ E('p', { 'class': 'spinning' }, _('Checking for updates…')) ]);
+			setChildren(section, [ E('p', { 'class': 'spinning ota-checking' }, _('Checking for updates…')) ]);
 
 		return callCheck().then((res) => {
 			this.busy = false;
@@ -858,8 +891,16 @@ return view.extend({
 				E('button', {
 					'class': 'cbi-button cbi-button-apply important',
 					'click': ui.createHandlerFn(this, () => {
-						ui.hideModal();
+						// Start first: if hideModal() throws, the installation
+						// must still be requested and the overlay still shown.
 						this.startInstall(keep);
+
+						try {
+							ui.hideModal();
+						}
+						catch (e) {
+							/* the overlay covers the dialog anyway */
+						}
 					})
 				}, _('Start installation'))
 			])
@@ -869,8 +910,22 @@ return view.extend({
 	startInstall: function(keep) {
 		this.stopPolling();
 
+		// Show the overlay before talking to the backend. The apply call can
+		// take a moment, and a failure used to leave the page with no feedback
+		// at all, which made it look like nothing had started.
+		this.showFlashing();
+
+		this.unloadGuard = (e) => {
+			e.preventDefault();
+			e.returnValue = _('The firmware is being written, please do not leave this page.');
+			return e.returnValue;
+		};
+
+		window.addEventListener('beforeunload', this.unloadGuard);
+
 		return callApply(keep).then((res) => {
 			if (!res || !res.ok) {
+				this.hideFlashing();
 				addError(res);
 				this.renderState();
 
@@ -878,17 +933,27 @@ return view.extend({
 			}
 
 			this.status = { state: 'installing' };
-			this.showFlashing();
-
-			window.addEventListener('beforeunload', (e) => {
-				e.preventDefault();
-				e.returnValue = _('The firmware is being written, please do not leave this page.');
-				return e.returnValue;
-			});
 		}).catch((err) => {
+			this.hideFlashing();
 			ui.addNotification(null, E('p', {}, _('Could not start the installation: %s').format(err.message || err)), 'danger');
 			this.renderState();
 		});
+	},
+
+	githubBadge: function() {
+		const badge = E('div', { 'class': 'ota-gh' });
+
+		// Written as markup: document.createElement() cannot build SVG children.
+		badge.innerHTML =
+			'<svg viewBox="0 0 16 16" role="img" aria-label="GitHub">' +
+			'<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 ' +
+			'0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 ' +
+			'1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 ' +
+			'0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 ' +
+			'0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>' +
+			'</svg>';
+
+		return badge;
 	},
 
 	showFlashing: function() {
@@ -902,7 +967,7 @@ return view.extend({
 
 		const elapsed = E('b', {}, '0:00');
 		const card = E('div', { 'class': 'ota-overlay-card' }, [
-			E('div', { 'class': 'ota-ring' }),
+			this.githubBadge(),
 			E('h2', {}, _('Installing firmware')),
 			E('p', { 'class': 'ota-overlay-sub' }, [
 				E('span', { 'class': 'ota-danger' }, _('Do not power off the device.')),
@@ -918,8 +983,10 @@ return view.extend({
 			])
 		]);
 
+		this.flashNode = E('div', { 'class': 'ota-overlay' }, card);
+
 		document.body.classList.add('ota-flashing');
-		document.body.appendChild(E('div', { 'class': 'ota-overlay' }, card));
+		document.body.appendChild(this.flashNode);
 
 		const setPhase = (index) => {
 			order.forEach((key, i) => {
@@ -931,7 +998,7 @@ return view.extend({
 
 		let waited = 0;
 
-		const timer = window.setInterval(() => {
+		this.flashTimer = window.setInterval(() => {
 			waited++;
 			elapsed.textContent = fmtDuration(waited);
 
@@ -942,10 +1009,35 @@ return view.extend({
 			else if (waited === 55)
 				setPhase(3);
 			else if (waited === 65) {
-				window.clearInterval(timer);
+				this.stopFlashTimer();
 				this.waitForDevice(steps.reconnect, card);
 			}
 		}, 1000);
+	},
+
+	stopFlashTimer: function() {
+		if (this.flashTimer) {
+			window.clearInterval(this.flashTimer);
+			this.flashTimer = null;
+		}
+	},
+
+	/* Tear the overlay down again when the backend refused to start, so the
+	 * user is not left staring at a spinner that will never finish. */
+	hideFlashing: function() {
+		this.stopFlashTimer();
+
+		if (this.flashNode && this.flashNode.parentNode)
+			this.flashNode.parentNode.removeChild(this.flashNode);
+
+		this.flashNode = null;
+
+		if (this.unloadGuard) {
+			window.removeEventListener('beforeunload', this.unloadGuard);
+			this.unloadGuard = null;
+		}
+
+		document.body.classList.remove('ota-flashing');
 	},
 
 	/* Wait for the device to go away and come back, then reload the page.

@@ -343,6 +343,7 @@ function load_config() {
 	const cfg = {
 		api_url: '',
 		device: '',
+		download_proxy: '',
 		auto_check: true,
 		keep_settings: true,
 		verify_image: true,
@@ -364,6 +365,7 @@ function load_config() {
 
 	cfg.api_url = or_str(c.get('ota', 'config', 'api_url'), '');
 	cfg.device = or_str(c.get('ota', 'config', 'device'), '');
+	cfg.download_proxy = or_str(c.get('ota', 'config', 'download_proxy'), '');
 	cfg.auto_check = cfg_flag(c, 'auto_check', true);
 	cfg.keep_settings = cfg_flag(c, 'keep_settings', true);
 	cfg.verify_image = cfg_flag(c, 'verify_image', true);
@@ -731,6 +733,89 @@ function is_newer(entry, local) {
 }
 
 /* ------------------------------------------------------------------ */
+/* download acceleration sites                                        */
+/* ------------------------------------------------------------------ */
+
+// Firmware images live on these hosts; an acceleration site is a plain prefix
+// proxy, so rewriting any other URL would only break it.
+const GITHUB_HOSTS = [
+	'github.com',
+	'www.github.com',
+	'api.github.com',
+	'codeload.github.com',
+	'objects.githubusercontent.com',
+	'github-releases.githubusercontent.com',
+	'raw.githubusercontent.com'
+];
+
+function url_host(url) {
+	const pos = index(url, '://');
+
+	if (pos < 0)
+		return '';
+
+	let rest = substr(url, pos + 3);
+
+	const slash = index(rest, '/');
+
+	if (slash >= 0)
+		rest = substr(rest, 0, slash);
+
+	const at = index(rest, '@');
+
+	if (at >= 0)
+		rest = substr(rest, at + 1);
+
+	const colon = index(rest, ':');
+
+	if (colon >= 0)
+		rest = substr(rest, 0, colon);
+
+	return lc(rest);
+}
+
+function is_github_url(url) {
+	const host = url_host(url);
+
+	for (let i = 0; i < length(GITHUB_HOSTS); i++) {
+		if (host == GITHUB_HOSTS[i])
+			return true;
+	}
+
+	return false;
+}
+
+function proxy_is_direct(proxy) {
+	const v = lc(trim(proxy));
+
+	return (v == '' || v == 'direct' || v == 'none' || v == 'off' || v == '-');
+}
+
+// A proxy is only a prefix: https://proxy.example/https://github.com/...
+function proxied_url(url, cfg) {
+	const proxy = trim(cfg.download_proxy);
+
+	if (url == '' || proxy_is_direct(proxy))
+		return url;
+
+	if (substr(lc(proxy), 0, 4) != 'http')
+		return url;
+
+	if (index(lc(url), lc(proxy)) == 0)
+		return url;
+
+	if (!is_github_url(url))
+		return url;
+
+	let base = proxy;
+
+	while (substr(base, length(base) - 1, 1) == '/')
+		base = substr(base, 0, length(base) - 1);
+
+	return base + '/' + url;
+}
+
+/* ------------------------------------------------------------------ */
 /* network helpers                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -899,6 +984,7 @@ function do_info() {
 		config: {
 			api_url: cfg.api_url,
 			device: cfg.device,
+			download_proxy: cfg.download_proxy,
 			auto_check: cfg.auto_check ? 1 : 0,
 			keep_settings: cfg.keep_settings ? 1 : 0,
 			verify_image: cfg.verify_image ? 1 : 0,
@@ -1055,8 +1141,12 @@ function do_download() {
 	safe_unlink(DL_LOG);
 
 	const cfg = load_config();
+	const url = proxied_url(remote.url, cfg);
+
+	safe_write(DL_LOG, 'source: ' + url + '\n');
+
 	const args = [
-		sh_quote(remote.url),
+		sh_quote(url),
 		sh_quote(PART),
 		sh_quote(IMAGE),
 		sh_quote(sha),
