@@ -6,6 +6,20 @@ return view.extend({
 	render: function() {
 		let m, s, o;
 
+		// Suggested acceleration sites. The field stays free text, these are
+		// only offered as <datalist> suggestions.
+		const presets = [
+			'https://gh-proxy.kejizero.xyz',
+			'https://gh-proxy.com',
+			'https://gh.acmsz.top',
+			'https://ghp.keleyaa.com',
+			'https://git.yylx.win',
+			'https://xsadwsd.kdns.fr',
+			'https://fastly.jsdelivr.net',
+			'https://testingcf.jsdelivr.net',
+			'https://cdn.jsdelivr.net'
+		];
+
 		m = new form.Map('ota', _('OTA Firmware Update'),
 			_('Configure where LuCI looks for firmware updates and how they are handled.'));
 
@@ -34,6 +48,21 @@ return view.extend({
 		o.placeholder = _('detect automatically');
 		o.rmempty = true;
 
+		o = s.option(form.Value, 'download_proxy', _('Download acceleration site'),
+			_('GitHub downloads are prefixed with this site, for example https://gh-proxy.kejizero.xyz/https://github.com/... Leave it empty to download straight from GitHub.'));
+		o.placeholder = presets[0];
+		o.default = presets[0];
+		o.rmempty = true;
+		o.validate = function(section_id, value) {
+			if (!value)
+				return true;
+
+			if (!/^https?:\/\/[^\s]+$/i.test(value))
+				return _('The acceleration site has to be a URL starting with http:// or https://.');
+
+			return true;
+		};
+
 		o = s.option(form.Flag, 'auto_check', _('Check on page load'),
 			_('Look for a new firmware when the overview page is opened and the last check is older than ten minutes.'));
 		o.default = '1';
@@ -59,6 +88,22 @@ return view.extend({
 		o.default = '0';
 		o.rmempty = false;
 
-		return m.render();
+		const rendered = m.render();
+
+		return Promise.resolve(rendered).then((node) => {
+			const input = node.querySelector('input[id$="download_proxy"], input[name$="download_proxy"]');
+
+			if (input) {
+				const list = E('datalist', { 'id': 'ota-download-proxy-presets' });
+
+				presets.forEach((url) => list.appendChild(E('option', { 'value': url })));
+
+				node.appendChild(list);
+				input.setAttribute('list', 'ota-download-proxy-presets');
+				input.setAttribute('placeholder', presets[0]);
+			}
+
+			return node;
+		});
 	}
 });
