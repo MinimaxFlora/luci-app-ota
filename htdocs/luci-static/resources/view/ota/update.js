@@ -415,6 +415,7 @@ return view.extend({
 			'.ota-changelog pre { overflow-x: auto; padding: .5em; background: rgba(128,128,128,.12); border-radius: 6px; }',
 			'.ota-changelog code { background: rgba(128,128,128,.15); padding: 0 .2em; border-radius: 3px; }',
 			'.ota-changelog blockquote { border-left: 3px solid rgba(128,128,128,.4); margin: .5em 0; padding-left: .75em; color: #666; }',
+			'.ota-checking { margin: .5em 0 .9em 20px; padding: 0; }',
 			'.ota-ok { color: #2e7d32; }',
 			'.ota-warn { color: #ef6c00; }',
 			'.ota-mono { font-family: monospace; word-break: break-all; }',
@@ -792,7 +793,7 @@ return view.extend({
 		const section = this.body ? this.body.firstChild : null;
 
 		if (section && !silent)
-			setChildren(section, [ E('p', { 'class': 'spinning' }, _('Checking for updates…')) ]);
+			setChildren(section, [ E('p', { 'class': 'spinning ota-checking' }, _('Checking for updates…')) ]);
 
 		return callCheck().then((res) => {
 			this.busy = false;
