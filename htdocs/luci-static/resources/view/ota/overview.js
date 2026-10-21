@@ -453,11 +453,14 @@ return view.extend({
 				' border: 6px solid rgba(255,255,255,.14); border-top-color: #6fd3a8; border-right-color: #3fbb8b;' +
 				' animation: otaSpin 1s linear infinite; }',
 			'@keyframes otaSpin { to { transform: rotate(360deg); } }',
-			/* GitHub badge: the mark itself spins while the image is written */
-			'.ota-gh { width: 78px; height: 78px; margin: 0 auto 20px; display: flex; align-items: center;' +
-				' justify-content: center; border-radius: 50%; background: rgba(255,255,255,.07);' +
-				' border: 1px solid rgba(255,255,255,.14); box-shadow: 0 0 0 6px rgba(111,211,168,.06); }',
-			'.ota-gh svg { width: 46px; height: 46px; display: block; fill: #fff; animation: otaSpin 1.6s linear infinite; }',
+			/* GitHub badge: the mark stays upright, the ring around it spins */
+			'.ota-gh { position: relative; width: 78px; height: 78px; margin: 0 auto 20px; display: flex;' +
+				' align-items: center; justify-content: center; border-radius: 50%;' +
+				' background: rgba(255,255,255,.07); box-shadow: 0 0 0 6px rgba(111,211,168,.06); }',
+			'.ota-gh svg { width: 42px; height: 42px; display: block; fill: #fff; }',
+			'.ota-gh::before { content: ""; position: absolute; inset: -4px; border-radius: 50%;' +
+				' border: 3px solid rgba(255,255,255,.14); border-top-color: #6fd3a8; border-right-color: #3fbb8b;' +
+				' animation: otaSpin 1.1s linear infinite; }',
 			'.ota-overlay-card h2 { margin: 0 0 6px; padding: 0; font-size: 1.35rem; color: #fff;' +
 				' background: none; border: 0; box-shadow: none; }',
 			'.ota-overlay-sub { margin: 0; color: rgba(255,255,255,.7); font-size: 14px; }',
