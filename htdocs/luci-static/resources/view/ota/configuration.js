@@ -98,14 +98,52 @@ return view.extend({
 			const reference = node.querySelector('input[id$="api_url"]');
 			const width = reference ? Math.round(reference.getBoundingClientRect().width) : 0;
 			const field = input.parentNode;
-			const custom = '__custom__';
+			const customValue = '__custom__';
 
-			// A real select is the primary control: click, pick, done. Only
-			// when "custom" is chosen does a text field appear below it.
+			// Same behaviour as the combobox mosdns uses: a select for the
+			// known mirrors plus "custom"; type a URL there, press enter and
+			// it becomes a selected entry of the list.
 			const select = E('select', { 'class': 'cbi-input-select' });
+			const customOption = E('option', { 'value': customValue }, _('Custom'));
 
 			presets.forEach((url) => select.appendChild(E('option', { 'value': url }, url)));
-			select.appendChild(E('option', { 'value': custom }, _('Custom')));
+			select.appendChild(customOption);
+
+			// Adds a typed value right above the "custom" entry, unless the
+			// list already has it.
+			const remember = (value) => {
+				const existing = Array.from(select.options).find((o) => o.value === value);
+
+				if (existing)
+					return existing;
+
+				const option = E('option', { 'value': value }, value);
+				select.insertBefore(option, customOption);
+				return option;
+			};
+
+			const showCustom = (focus) => {
+				select.value = customValue;
+				input.style.display = 'block';
+
+				if (focus)
+					input.focus();
+			};
+
+			// Leave the text field: whatever was typed becomes the selection.
+			const commit = () => {
+				const value = (input.value || '').trim();
+
+				if (value === '') {
+					input.style.display = 'none';
+					return;
+				}
+
+				remember(value);
+				select.value = value;
+				input.value = value;
+				input.style.display = 'none';
+			};
 
 			field.style.display = 'block';
 
@@ -123,37 +161,34 @@ return view.extend({
 			input.removeAttribute('list');
 			input.removeAttribute('autocomplete');
 
-			const showCustom = (focus) => {
-				select.value = custom;
-				input.style.display = 'block';
-
-				if (focus)
-					input.focus();
-			};
-
-			const showPreset = (url) => {
-				select.value = url;
-				input.value = url;
-				input.style.display = 'none';
-			};
-
 			select.addEventListener('change', () => {
-				if (select.value === custom)
+				if (select.value === customValue)
 					showCustom(true);
-				else
-					showPreset(select.value);
+				else {
+					input.value = select.value;
+					input.style.display = 'none';
+				}
+			});
+
+			input.addEventListener('keydown', (ev) => {
+				if (ev.key === 'Enter') {
+					ev.preventDefault();
+					commit();
+				}
+			});
+
+			input.addEventListener('blur', () => {
+				if (input.style.display !== 'none')
+					commit();
 			});
 
 			field.insertBefore(select, input);
 
-			const current = (input.value || '').trim();
+			const current = (input.value || '').trim() || presets[0];
 
-			if (presets.indexOf(current) >= 0)
-				showPreset(current);
-			else if (current === '')
-				showPreset(presets[0]);
-			else
-				showCustom(false);
+			remember(current);
+			select.value = current;
+			input.value = current;
 
 			return node;
 		});
