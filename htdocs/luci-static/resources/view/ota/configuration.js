@@ -46,9 +46,22 @@ return view.extend({
 		o = s.option(form.ListValue, 'download_proxy', _('Download acceleration site'),
 			_('Choose the GitHub proxy acceleration site.'));
 		presets.forEach((url) => o.value(url, url));
+		o.value('custom', _('Custom'));
 		o.value('', _('No acceleration (direct)'));
 		o.default = presets[0];
 		o.rmempty = false;
+
+		o = s.option(form.Value, 'download_proxy_custom', _('Custom acceleration site'),
+			_('Full URL of the acceleration site, for example https://gh-proxy.example.com'));
+		o.placeholder = 'https://gh-proxy.example.com';
+		o.depends('download_proxy', 'custom');
+		o.rmempty = false;
+		o.validate = function(section_id, value) {
+			if (!/^https?:\/\/[^\s]+$/i.test(value))
+				return _('The acceleration site has to be a URL starting with http:// or https://.');
+
+			return true;
+		};
 
 		o = s.option(form.Value, 'device', _('Device key'),
 			_('Key that identifies this device in the update index. Leave empty to detect it automatically from the running firmware.'));

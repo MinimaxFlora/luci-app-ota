@@ -12,6 +12,9 @@ config ota 'config'
 	# Leave empty (or set "direct") to download straight from GitHub.
 	option download_proxy 'https://gh-proxy.kejizero.xyz'
 
+	# Used instead of download_proxy when that is set to "custom".
+	option download_proxy_custom ''
+
 	# Check for updates automatically when the page is opened
 	option auto_check '1'
 

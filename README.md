@@ -91,7 +91,8 @@ apk add --allow-untrusted luci-app-ota-*.apk
 | --- | --- | --- |
 | `api_url` | 空 | 更新索引 JSON 的 URL，未填时页面会提示去配置 |
 | `device` | 空 | 手动指定设备标识，留空自动识别 |
-| `download_proxy` | `https://gh-proxy.kejizero.xyz` | 下载加速站点，下拉选择；选「不使用加速」时存空值，直连 GitHub |
+| `download_proxy` | `https://gh-proxy.kejizero.xyz` | 下载加速站点，下拉选择；选「自定义」用下一项，选「不使用加速」存空值直连 GitHub |
+| `download_proxy_custom` | 空 | `download_proxy` 为 `custom` 时使用的加速站点地址 |
 | `auto_check` | `1` | 打开页面且距上次检查超过 10 分钟时自动检查 |
 | `keep_settings` | `1` | 安装页「保留设置」默认勾选 |
 | `verify_image` | `1` | 下载完成后用 `sysupgrade -T` 预检镜像 |
