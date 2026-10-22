@@ -412,6 +412,15 @@ return view.extend({
 
 	renderStyle: function() {
 		return E('style', {}, [
+			'.ota-flash { text-align: center; padding: .2em 0 .1em; }',
+			'.ota-flash-spinner { width: 46px; height: 46px; margin: .2em auto 1em; border-radius: 50%;' +
+				' border: 3px solid rgba(46, 157, 114, .22); border-top-color: #2E9D72;' +
+				' animation: ota-spin .9s linear infinite; }',
+			'@keyframes ota-spin { to { transform: rotate(360deg); } }',
+			'.ota-flash-warn { margin: 0 0 .35em; color: #d9534f; font-weight: 600; }',
+			'.ota-flash-hint { margin: 0 0 1em; color: #666; }',
+			'.ota-flash-foot { margin: 0; padding-top: .8em; border-top: 1px solid rgba(128, 128, 128, .25);' +
+				' color: #777; font-size: 92%; }',
 			'.ota-table { width: 100%; border-collapse: collapse; }',
 			'.ota-table td { padding: .4em .5em; vertical-align: top; }',
 			'.ota-table td.ota-key { width: 34%; color: #666; white-space: nowrap; }',
@@ -902,53 +911,54 @@ return view.extend({
 				E('button', {
 					'class': 'cbi-button cbi-button-apply important',
 					'click': ui.createHandlerFn(this, () => {
-						// Start first: if hideModal() throws, the installation
-						// must still be requested and the overlay still shown.
-						this.startInstall(keep);
-
+						// Close the confirmation first: ui.hideModal() closes the
+						// top layer, so calling it after startInstall() would
+						// also remove the flashing modal that replaced it.
 						try {
 							ui.hideModal();
 						}
 						catch (e) {
-							/* the overlay covers the dialog anyway */
+							/* nothing to close */
 						}
+
+						this.startInstall(keep);
 					})
 				}, _('Start installation'))
 			])
 		]);
 	},
 
-	/* Same feedback as the LuCI flash page: a modal that stays on screen while
-	 * the device is written and reboots, then the browser goes back to the
-	 * device root. The modal belongs to the page that is already loaded, so a
-	 * dead network cannot remove it. */
+	/* The modal goes up before the call, so clicking "Start installation" gives
+	 * instant feedback; if the backend refuses, it is taken down again. */
 	startInstall: function(keep) {
 		this.stopPolling();
-		try { ui.hideModal(); } catch (e) { }
+		this.showFlashing();
 
 		return callApply(keep).then((res) => {
-			if (res && res.ok) {
-				this.showFlashing();
+			if (res && res.ok)
+				return this.waitForDevice();
 
-				return;
-			}
-
+			this.hideFlashing();
 			addError(res);
 			this.renderState();
 		}).catch(() => {
 			// sysupgrade replaces the running system: the call dies with the web
 			// server, which means the flash is already running.
-			this.showFlashing();
+			return this.waitForDevice();
 		});
 	},
 
 	showFlashing: function() {
-		const target = window.location.protocol + '//' + window.location.host;
-
-		ui.showModal(_('Flashing…'), [
-			E('p', { 'class': 'spinning' },
-				_('The system is flashing now. Do not power off the device. Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again.'))
+		const elapsed = E('b', {}, '0:00');
+		const body = E('div', { 'class': 'ota-flash' }, [
+			E('div', { 'class': 'ota-flash-spinner' }),
+			E('p', { 'class': 'ota-flash-warn' }, _('Do not power off the device.')),
+			E('p', { 'class': 'ota-flash-hint' },
+				_('The router is writing the image and reboots when it is done. This page reconnects automatically.')),
+			E('p', { 'class': 'ota-flash-foot' }, [ _('Elapsed') + ' ', elapsed ])
 		]);
+
+		ui.showModal(_('Flashing firmware…'), [ body ]);
 
 		this.unloadGuard = (e) => {
 			e.preventDefault();
@@ -959,27 +969,63 @@ return view.extend({
 
 		window.addEventListener('beforeunload', this.unloadGuard);
 
+		const started = Date.now();
+
+		this.flashTimer = window.setInterval(() => {
+			const seconds = Math.round((Date.now() - started) / 1000);
+			const m = Math.floor(seconds / 60);
+			const s = seconds % 60;
+
+			elapsed.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+		}, 1000);
+	},
+
+	hideFlashing: function() {
+		if (this.flashTimer) {
+			window.clearInterval(this.flashTimer);
+			this.flashTimer = null;
+		}
+
+		if (this.unloadGuard) {
+			window.removeEventListener('beforeunload', this.unloadGuard);
+			this.unloadGuard = null;
+		}
+
+		ui.hideModal();
+	},
+
+	/* Wait until the device has been unreachable once and answers again, then go
+	 * to the device root: the LuCI session is gone after a reboot, so the
+	 * browser lands on the login page. */
+	waitForDevice: function() {
+		const target = window.location.protocol + '//' + window.location.host;
+		const started = Date.now();
 		let wentDown = false;
+		let timer = null;
 
 		window.setTimeout(() => {
-			const interval = window.setInterval(() => {
+			timer = window.setInterval(() => {
 				const img = new Image();
 
 				img.onload = () => {
-					// A successful check right after the delay only proves the old
-					// system is still writing the image, so wait until it has been
-					// unreachable once.
+					// A success right after the delay only proves the old system is
+					// still writing the image, so require one failed probe first.
 					if (!wentDown)
 						return;
 
-					window.clearInterval(interval);
-					window.removeEventListener('beforeunload', this.unloadGuard);
+					window.clearInterval(timer);
 					window.location.replace(target);
 				};
 
 				img.onerror = () => {
 					wentDown = true;
 				};
+
+				if ((Date.now() - started) > 15 * 60 * 1000) {
+					window.clearInterval(timer);
+
+					return;
+				}
 
 				img.src = target + L.resource('icons/loading.svg') + '?' + Math.random();
 			}, 5000);
