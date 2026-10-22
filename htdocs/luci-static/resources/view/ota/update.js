@@ -412,15 +412,19 @@ return view.extend({
 
 	renderStyle: function() {
 		return E('style', {}, [
-			'.ota-flash { text-align: center; padding: .2em 0 .1em; }',
-			'.ota-flash-spinner { width: 46px; height: 46px; margin: .2em auto 1em; border-radius: 50%;' +
-				' border: 3px solid rgba(46, 157, 114, .22); border-top-color: #2E9D72;' +
-				' animation: ota-spin .9s linear infinite; }',
+			'.ota-flash { text-align: center; padding: .3em 0 .1em; }',
+			'.ota-flash .ota-gh { width: 74px; height: 74px; margin: 0 auto 1.1em; position: relative; display: block; }',
+			'.ota-flash .ota-gh svg { width: 40px; height: 40px; margin: 17px auto 0; display: block;' +
+				' fill: #24292f; }',
+			'.ota-flash .ota-gh::before { content: ""; position: absolute; inset: 0; border-radius: 50%;' +
+				' border: 3px solid rgba(46, 157, 114, .18); border-top-color: #2E9D72;' +
+				' animation: ota-spin 1s linear infinite; }',
 			'@keyframes ota-spin { to { transform: rotate(360deg); } }',
-			'.ota-flash-warn { margin: 0 0 .35em; color: #d9534f; font-weight: 600; }',
-			'.ota-flash-hint { margin: 0 0 1em; color: #666; }',
-			'.ota-flash-foot { margin: 0; padding-top: .8em; border-top: 1px solid rgba(128, 128, 128, .25);' +
+			'.ota-flash-warn { margin: 0 0 .4em; color: #d9534f; font-weight: 600; }',
+			'.ota-flash-hint { margin: 0 0 1.1em; color: #666; }',
+			'.ota-flash-foot { margin: 0; padding-top: .9em; border-top: 1px solid rgba(128, 128, 128, .25);' +
 				' color: #777; font-size: 92%; }',
+			'.ota-flash-foot b { font-family: monospace; color: #444; }',
 			'.ota-table { width: 100%; border-collapse: collapse; }',
 			'.ota-table td { padding: .4em .5em; vertical-align: top; }',
 			'.ota-table td.ota-key { width: 34%; color: #666; white-space: nowrap; }',
@@ -480,11 +484,9 @@ return view.extend({
 			'.ota-kv dd { margin: 0; word-break: break-all; }',
 
 			/* full screen flashing overlay */
-			'.ota-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center;' +
 				' justify-content: center; padding: 24px; background: rgba(8,16,12,.74);' +
 				' -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: otaFade .25s ease; }',
 			'@keyframes otaFade { from { opacity: 0; } }',
-			'.ota-overlay-card { width: min(540px, 100%); padding: 34px 32px 26px; border-radius: 18px; text-align: center;' +
 				' color: #f3f8f5; background: rgba(20,29,24,.94); border: 1px solid rgba(255,255,255,.12);' +
 				' box-shadow: 0 28px 70px rgba(0,0,0,.5); }',
 			'.ota-ring { width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%;' +
@@ -499,9 +501,7 @@ return view.extend({
 			'.ota-gh::before { content: ""; position: absolute; inset: -4px; border-radius: 50%;' +
 				' border: 3px solid rgba(255,255,255,.14); border-top-color: #6fd3a8; border-right-color: #3fbb8b;' +
 				' animation: otaSpin 1.1s linear infinite; }',
-			'.ota-overlay-card h2 { margin: 0 0 6px; padding: 0; font-size: 1.35rem; color: #fff;' +
 				' background: none; border: 0; box-shadow: none; }',
-			'.ota-overlay-sub { margin: 0; color: rgba(255,255,255,.7); font-size: 14px; }',
 			'.ota-steps { list-style: none; margin: 20px 0 0; padding: 0; text-align: left; font-size: 14px; }',
 			'.ota-steps li { position: relative; padding: .38em 0 .38em 1.9em; color: rgba(255,255,255,.55); }',
 			'.ota-steps li::before { content: ""; position: absolute; left: .35em; top: .95em; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.22); }',
@@ -510,11 +510,8 @@ return view.extend({
 			'.ota-steps li.active { color: #fff; }',
 			'.ota-steps li.active::before { background: #6fd3a8; box-shadow: 0 0 0 4px rgba(111,211,168,.22); animation: otaPulse 1.5s ease-in-out infinite; }',
 			'@keyframes otaPulse { 50% { box-shadow: 0 0 0 9px rgba(111,211,168,.04); } }',
-			'.ota-overlay-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1);' +
 				' color: rgba(255,255,255,.55); font-size: 12.5px; }',
-			'.ota-overlay-foot b { color: rgba(255,255,255,.85); font-weight: 600; }',
 			'.ota-danger { color: #ffb4a2; }',
-			'body.ota-flashing { overflow: hidden; }',
 			'@media (prefers-reduced-motion: reduce) { .ota-ring, .ota-fill, .ota-fill::after, .ota-steps li.active::before { animation: none; } }'
 		].join('\n'));
 	},
@@ -951,7 +948,7 @@ return view.extend({
 	showFlashing: function() {
 		const elapsed = E('b', {}, '0:00');
 		const body = E('div', { 'class': 'ota-flash' }, [
-			E('div', { 'class': 'ota-flash-spinner' }),
+			this.githubBadge(),
 			E('p', { 'class': 'ota-flash-warn' }, _('Do not power off the device.')),
 			E('p', { 'class': 'ota-flash-hint' },
 				_('The router is writing the image and reboots when it is done. This page reconnects automatically.')),
@@ -1014,6 +1011,14 @@ return view.extend({
 						return;
 
 					window.clearInterval(timer);
+
+					// The guard would otherwise ask "leave site?" and the
+					// redirect would never happen.
+					if (this.unloadGuard) {
+						window.removeEventListener('beforeunload', this.unloadGuard);
+						this.unloadGuard = null;
+					}
+
 					window.location.replace(target);
 				};
 
