@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-22 09:03+0800\n"
+"PO-Revision-Date: 2026-10-22 11:06+0800\n"
 "Last-Translator: MinimaxFlora <MinimaxFlora@users.noreply.github.com>\n"
 "Language-Team: Chinese\n"
 "Language: zh_Hans\n"
@@ -155,7 +155,7 @@ msgstr "下载加速站点"
 msgid "Download again"
 msgstr "重新下载"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1231
+#: htdocs/luci-static/resources/view/ota/update.js:1227
 #: htdocs/luci-static/resources/view/ota/update.js:910
 msgid "Download canceled."
 msgstr "下载已取消。"
@@ -188,7 +188,7 @@ msgstr "文件名"
 msgid "Firmware downloaded and verified"
 msgstr "固件已下载并通过校验"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1225
+#: htdocs/luci-static/resources/view/ota/update.js:1221
 msgid "Firmware downloaded and verified."
 msgstr "固件已下载并通过校验。"
 
@@ -388,9 +388,11 @@ msgstr "地址必须以 http:// 或 https:// 开头。"
 msgid "The acceleration site has to be a URL starting with http:// or https://."
 msgstr "加速站点必须是 http:// 或 https:// 开头的网址。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1171
-msgid "The device did not reboot. Check the sysupgrade log."
-msgstr "设备没有重启，请查看 sysupgrade 日志。"
+#: htdocs/luci-static/resources/view/ota/update.js:1156
+msgid ""
+"The device did not come back. Check it and open the web interface "
+"manually."
+msgstr "设备没有恢复，请检查设备并手动打开管理界面。"
 
 #: htdocs/luci-static/resources/view/ota/update.js:924
 msgid "The device will be flashed and rebooted. This takes a few minutes."

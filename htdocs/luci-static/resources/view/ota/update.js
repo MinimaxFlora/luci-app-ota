@@ -1130,10 +1130,10 @@ return view.extend({
 		window.location.replace(url);
 	},
 
-	/* Wait for the device to go away and come back, then reload the page.
-	 * Waiting for the "away" phase first avoids reloading while the old
-	 * system is still answering. When the overlay was restored after a reload
-	 * the device may already be back, so an answer is enough. */
+	/* Wait for the device to go away and come back, then hand the browser
+	 * over to it. A successful probe alone means nothing: the web server keeps
+	 * answering while sysupgrade is still writing the image, which is exactly
+	 * how the overlay used to disappear after a couple of minutes. */
 	waitForDevice: function(stepNode, card, resume) {
 		// After a reboot the LuCI session is gone, so land on the device root:
 		// the browser follows it to the login page instead of a dead view.
@@ -1150,38 +1150,34 @@ return view.extend({
 		const started = Date.now();
 		let wentDown = false;
 
+		const giveUp = () => {
+			clearFlashMark();
+			this.hideFlashing();
+			ui.addNotification(null, E('p', {}, _('The device did not come back. Check it and open the web interface manually.')), 'warning');
+		};
+
 		const probe = () => {
+			if ((Date.now() - started) > FLASH_MAX_MS) {
+				giveUp();
+
+				return;
+			}
+
 			const img = new Image();
 
 			img.onload = () => {
-				if (!wentDown) {
-					if (resume) {
-						// Restored overlay and the device answers: the flash
-						// has finished while the page was gone.
-						this.hideFlashing();
-						this.finishFlash(url);
+				if (resume || wentDown) {
+					if (stepNode)
+						stepNode.className = 'done';
 
-						return;
-					}
-
-					if ((Date.now() - started) > 120000) {
-						// It never went away, so nothing was flashed.
-						clearFlashMark();
-						this.hideFlashing();
-						ui.addNotification(null, E('p', {}, _('The device did not reboot. Check the sysupgrade log.')), 'warning');
-
-						return;
-					}
-
-					window.setTimeout(probe, 3000);
+					this.finishFlash(url);
 
 					return;
 				}
 
-				if (stepNode)
-					stepNode.className = 'done';
-
-				this.finishFlash(url);
+				// The old system (or the still running write) answers: keep
+				// showing the overlay and look again in a moment.
+				window.setTimeout(probe, 3000);
 			};
 
 			img.onerror = () => {

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-22 09:03+0800\n"
+"POT-Creation-Date: 2026-10-22 11:06+0800\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -152,7 +152,7 @@ msgstr ""
 msgid "Download again"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/update.js:1231
+#: htdocs/luci-static/resources/view/ota/update.js:1227
 #: htdocs/luci-static/resources/view/ota/update.js:910
 msgid "Download canceled."
 msgstr ""
@@ -185,7 +185,7 @@ msgstr ""
 msgid "Firmware downloaded and verified"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/update.js:1225
+#: htdocs/luci-static/resources/view/ota/update.js:1221
 msgid "Firmware downloaded and verified."
 msgstr ""
 
@@ -385,8 +385,10 @@ msgstr ""
 msgid "The acceleration site has to be a URL starting with http:// or https://."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/update.js:1171
-msgid "The device did not reboot. Check the sysupgrade log."
+#: htdocs/luci-static/resources/view/ota/update.js:1156
+msgid ""
+"The device did not come back. Check it and open the web interface "
+"manually."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/update.js:924
