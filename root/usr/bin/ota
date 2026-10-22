@@ -1178,7 +1178,7 @@ function do_download() {
 		if (read_trim(DL_PID) != null || read_trim(DL_EXIT) != null)
 			break;
 
-		sleep(20000);
+		sleep(200);
 	}
 
 	return { ok: true, status: do_status() };
@@ -1196,7 +1196,7 @@ function do_cancel() {
 			if (!process_alive(pid))
 				break;
 
-			sleep(100000);
+			sleep(100);
 		}
 
 		if (process_alive(pid))
