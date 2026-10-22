@@ -413,9 +413,9 @@ return view.extend({
 	renderStyle: function() {
 		return E('style', {}, [
 			'.ota-flash { text-align: center; padding: .3em 0 .1em; }',
-			'.ota-flash .ota-gh { width: 74px; height: 74px; margin: 0 auto 1.1em; position: relative; display: block; }',
-			'.ota-flash .ota-gh svg { width: 40px; height: 40px; margin: 17px auto 0; display: block;' +
-				' fill: #24292f; }',
+			'.ota-flash .ota-gh { width: 74px; height: 74px; margin: 0 auto 1.1em; position: relative;' +
+				' display: flex; align-items: center; justify-content: center; }',
+			'.ota-flash .ota-gh svg { width: 40px; height: 40px; margin: 0; display: block; fill: #24292f; }',
 			'.ota-flash .ota-gh::before { content: ""; position: absolute; inset: 0; border-radius: 50%;' +
 				' border: 3px solid rgba(46, 157, 114, .18); border-top-color: #2E9D72;' +
 				' animation: ota-spin 1s linear infinite; }',
