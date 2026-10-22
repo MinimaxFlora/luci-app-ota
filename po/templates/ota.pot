@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-22 11:40+0800\n"
+"POT-Creation-Date: 2026-10-22 12:18+0800\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -148,8 +148,8 @@ msgstr ""
 msgid "Download again"
 msgstr ""
 
+#: htdocs/luci-static/resources/view/ota/update.js:1038
 #: htdocs/luci-static/resources/view/ota/update.js:874
-#: htdocs/luci-static/resources/view/ota/update.js:995
 msgid "Download canceled."
 msgstr ""
 
@@ -177,8 +177,12 @@ msgstr ""
 msgid "Firmware downloaded and verified"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/ota/update.js:989
+#: htdocs/luci-static/resources/view/ota/update.js:1032
 msgid "Firmware downloaded and verified."
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/update.js:955
+msgid "Firmware is flashing, please do not leave or reload this page."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/update.js:577
@@ -187,6 +191,10 @@ msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/update.js:519
 msgid "Firmware version"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/update.js:948
+msgid "Flashing…"
 msgstr ""
 
 #: root/usr/share/rpcd/acl.d/luci-app-ota.json:3
@@ -389,6 +397,13 @@ msgstr ""
 msgid ""
 "The index entry has no SHA256 checksum. The download was blocked for "
 "safety reasons."
+msgstr ""
+
+#: htdocs/luci-static/resources/view/ota/update.js:950
+msgid ""
+"The system is flashing now. Do not power off the device. Wait a few "
+"minutes before you try to reconnect. It might be necessary to renew the "
+"address of your computer to reach the device again."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/ota/update.js:274

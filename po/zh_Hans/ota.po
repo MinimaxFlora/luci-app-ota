@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-22 11:40+0800\n"
+"PO-Revision-Date: 2026-10-22 12:18+0800\n"
 "Last-Translator: MinimaxFlora <MinimaxFlora@users.noreply.github.com>\n"
 "Language-Team: Chinese\n"
 "Language: zh_Hans\n"
@@ -151,8 +151,8 @@ msgstr "下载加速站点"
 msgid "Download again"
 msgstr "重新下载"
 
+#: htdocs/luci-static/resources/view/ota/update.js:1038
 #: htdocs/luci-static/resources/view/ota/update.js:874
-#: htdocs/luci-static/resources/view/ota/update.js:995
 msgid "Download canceled."
 msgstr "下载已取消。"
 
@@ -180,9 +180,13 @@ msgstr "文件名"
 msgid "Firmware downloaded and verified"
 msgstr "固件已下载并通过校验"
 
-#: htdocs/luci-static/resources/view/ota/update.js:989
+#: htdocs/luci-static/resources/view/ota/update.js:1032
 msgid "Firmware downloaded and verified."
 msgstr "固件已下载并通过校验。"
+
+#: htdocs/luci-static/resources/view/ota/update.js:955
+msgid "Firmware is flashing, please do not leave or reload this page."
+msgstr "固件正在刷写，请不要离开或刷新此页面。"
 
 #: htdocs/luci-static/resources/view/ota/update.js:577
 msgid "Firmware update"
@@ -191,6 +195,10 @@ msgstr "固件更新"
 #: htdocs/luci-static/resources/view/ota/update.js:519
 msgid "Firmware version"
 msgstr "固件版本"
+
+#: htdocs/luci-static/resources/view/ota/update.js:948
+msgid "Flashing…"
+msgstr "正在刷写…"
 
 #: root/usr/share/rpcd/acl.d/luci-app-ota.json:3
 msgid "Grant access to the OTA firmware update functionality"
@@ -393,6 +401,13 @@ msgid ""
 "The index entry has no SHA256 checksum. The download was blocked for "
 "safety reasons."
 msgstr "索引条目缺少 SHA256 校验值，出于安全考虑已阻止下载。"
+
+#: htdocs/luci-static/resources/view/ota/update.js:950
+msgid ""
+"The system is flashing now. Do not power off the device. Wait a few "
+"minutes before you try to reconnect. It might be necessary to renew the "
+"address of your computer to reach the device again."
+msgstr "系统正在刷写，请勿断电。请等待几分钟后再尝试重新连接，视你的设置可能需要重新获取电脑的 IP 地址。"
 
 #: htdocs/luci-static/resources/view/ota/update.js:274
 msgid ""

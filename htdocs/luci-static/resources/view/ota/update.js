@@ -918,18 +918,17 @@ return view.extend({
 		]);
 	},
 
-	/* Follow the same shape as the Lua plugin: the request that starts
-	 * sysupgrade is followed by a plain page, so nothing has to survive in the
-	 * JavaScript that made the call. That page polls the device and takes the
-	 * browser to the login screen once it is back. */
+	/* Same feedback as the LuCI flash page: a modal that stays on screen while
+	 * the device is written and reboots, then the browser goes back to the
+	 * device root. The modal belongs to the page that is already loaded, so a
+	 * dead network cannot remove it. */
 	startInstall: function(keep) {
 		this.stopPolling();
-
-		const flashing = L.resource('ota-flashing.html');
+		try { ui.hideModal(); } catch (e) { }
 
 		return callApply(keep).then((res) => {
 			if (res && res.ok) {
-				window.location.href = flashing;
+				this.showFlashing();
 
 				return;
 			}
@@ -937,10 +936,54 @@ return view.extend({
 			addError(res);
 			this.renderState();
 		}).catch(() => {
-			// The request dies with the web server when sysupgrade starts; that
-			// is the normal path, so go to the progress page anyway.
-			window.location.href = flashing;
+			// sysupgrade replaces the running system: the call dies with the web
+			// server, which means the flash is already running.
+			this.showFlashing();
 		});
+	},
+
+	showFlashing: function() {
+		const target = window.location.protocol + '//' + window.location.host;
+
+		ui.showModal(_('Flashing…'), [
+			E('p', { 'class': 'spinning' },
+				_('The system is flashing now. Do not power off the device. Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again.'))
+		]);
+
+		this.unloadGuard = (e) => {
+			e.preventDefault();
+			e.returnValue = _('Firmware is flashing, please do not leave or reload this page.');
+
+			return e.returnValue;
+		};
+
+		window.addEventListener('beforeunload', this.unloadGuard);
+
+		let wentDown = false;
+
+		window.setTimeout(() => {
+			const interval = window.setInterval(() => {
+				const img = new Image();
+
+				img.onload = () => {
+					// A successful check right after the delay only proves the old
+					// system is still writing the image, so wait until it has been
+					// unreachable once.
+					if (!wentDown)
+						return;
+
+					window.clearInterval(interval);
+					window.removeEventListener('beforeunload', this.unloadGuard);
+					window.location.replace(target);
+				};
+
+				img.onerror = () => {
+					wentDown = true;
+				};
+
+				img.src = target + L.resource('icons/loading.svg') + '?' + Math.random();
+			}, 5000);
+		}, 30000);
 	},
 
 	githubBadge: function() {
