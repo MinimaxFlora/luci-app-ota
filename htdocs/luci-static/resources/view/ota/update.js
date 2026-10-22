@@ -360,7 +360,18 @@ return view.extend({
 	busy: false,
 
 	load: function() {
-		return L.resolveDefault(callInfo(), null);
+		// rpcd is restarted by a settings save and is briefly unavailable right
+		// after a reboot, so a single failed call used to leave the page with
+		// "the OTA backend did not respond" until the user reloaded by hand.
+		const attempt = (left) => callInfo().catch(() => {
+			if (left <= 1)
+				return null;
+
+			return new Promise((resolve) => window.setTimeout(resolve, 1200))
+				.then(() => attempt(left - 1));
+		});
+
+		return attempt(4);
 	},
 
 	render: function(info) {
