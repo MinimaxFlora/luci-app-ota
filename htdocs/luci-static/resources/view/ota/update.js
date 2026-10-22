@@ -322,32 +322,6 @@ function addError(res) {
 /* view                                                               */
 /* ------------------------------------------------------------------ */
 
-/* A firmware flash kills the web server that served this page. Remember that
- * one was started, so the overlay survives a reload or a browser that lost the
- * Wi-Fi link and does not leave the user staring at a stale update page. */
-var FLASH_KEY = 'ota-flash-started';
-var FLASH_MAX_MS = 15 * 60 * 1000;
-
-function flashStartedAt() {
-	try {
-		var raw = window.sessionStorage.getItem(FLASH_KEY);
-		var when = raw ? parseInt(raw, 10) : 0;
-
-		if (when > 0 && (Date.now() - when) < FLASH_MAX_MS)
-			return when;
-	}
-	catch (e) { }
-
-	return 0;
-}
-
-function clearFlashMark() {
-	try {
-		window.sessionStorage.removeItem(FLASH_KEY);
-	}
-	catch (e) { }
-}
-
 return view.extend({
 	info: null,
 	check: null,
@@ -433,28 +407,7 @@ return view.extend({
 			window.setTimeout(() => this.handleCheck(null, true), 100);
 		}
 
-		this.resumeFlashing();
-
 		return container;
-	},
-
-	/* The flash started in an earlier page load: keep showing the overlay and
-	 * go straight to "wait for the device", instead of pretending nothing is
-	 * happening while the router reboots. */
-	resumeFlashing: function() {
-		var startedAt = flashStartedAt();
-
-		if (!startedAt || this.flashNode)
-			return;
-
-		this.unloadGuard = (e) => {
-			e.preventDefault();
-			e.returnValue = _('The firmware is being written, please do not leave this page.');
-			return e.returnValue;
-		};
-
-		window.addEventListener('beforeunload', this.unloadGuard);
-		this.showFlashing(startedAt, true);
 	},
 
 	renderStyle: function() {
@@ -965,40 +918,28 @@ return view.extend({
 		]);
 	},
 
+	/* Follow the same shape as the Lua plugin: the request that starts
+	 * sysupgrade is followed by a plain page, so nothing has to survive in the
+	 * JavaScript that made the call. That page polls the device and takes the
+	 * browser to the login screen once it is back. */
 	startInstall: function(keep) {
 		this.stopPolling();
 
-		// Show the overlay before talking to the backend. The apply call can
-		// take a moment, and a failure used to leave the page with no feedback
-		// at all, which made it look like nothing had started.
-		this.showFlashing();
-
-		this.unloadGuard = (e) => {
-			e.preventDefault();
-			e.returnValue = _('The firmware is being written, please do not leave this page.');
-			return e.returnValue;
-		};
-
-		window.addEventListener('beforeunload', this.unloadGuard);
+		const flashing = L.resource('ota-flashing.html');
 
 		return callApply(keep).then((res) => {
-			if (!res || !res.ok) {
-				// Nothing was written, so drop both the overlay and the mark
-				// that would bring it back after a reload.
-				clearFlashMark();
-				this.hideFlashing();
-				addError(res);
-				this.renderState();
+			if (res && res.ok) {
+				window.location.href = flashing;
 
 				return;
 			}
 
-			this.status = { state: 'installing' };
+			addError(res);
+			this.renderState();
 		}).catch(() => {
-			// sysupgrade replaces the running system, so the request that
-			// started it often dies without an answer. That is the normal
-			// path, not a failure: keep the overlay and wait for the reboot.
-			this.status = { state: 'installing' };
+			// The request dies with the web server when sysupgrade starts; that
+			// is the normal path, so go to the progress page anyway.
+			window.location.href = flashing;
 		});
 	},
 
@@ -1016,190 +957,6 @@ return view.extend({
 			'</svg>';
 
 		return badge;
-	},
-
-	showFlashing: function(startedAt, resume) {
-		const steps = {
-			write: E('li', {}, _('Writing the system partition')),
-			verify: E('li', {}, _('Verifying the image')),
-			reboot: E('li', {}, _('Rebooting the device')),
-			reconnect: E('li', {}, _('Reconnecting to the web interface'))
-		};
-		const order = [ 'write', 'verify', 'reboot', 'reconnect' ];
-
-		const elapsed = E('b', {}, '0:00');
-		const card = E('div', { 'class': 'ota-overlay-card' }, [
-			this.githubBadge(),
-			E('h2', {}, _('Installing firmware')),
-			E('p', { 'class': 'ota-overlay-sub' }, [
-				E('span', { 'class': 'ota-danger' }, _('Do not power off the device.')),
-				' ',
-				_('The page reconnects automatically once it is back.')
-			]),
-			E('ol', { 'class': 'ota-steps' }, order.map((key) => steps[key])),
-			E('p', { 'class': 'ota-overlay-foot' }, [
-				_('Elapsed') + ' ',
-				elapsed,
-				' · ',
-				_('Usually takes 1-3 minutes.')
-			])
-		]);
-
-		this.flashNode = E('div', { 'class': 'ota-overlay' }, card);
-
-		document.body.classList.add('ota-flashing');
-		document.body.appendChild(this.flashNode);
-
-		const setPhase = (index) => {
-			order.forEach((key, i) => {
-				steps[key].className = (i < index) ? 'done' : (i === index ? 'active' : '');
-			});
-		};
-
-		const phaseFor = (seconds) => {
-			if (seconds < 20)
-				return 0;
-			if (seconds < 40)
-				return 1;
-			if (seconds < 55)
-				return 2;
-
-			return 3;
-		};
-
-		if (!startedAt) {
-			startedAt = Date.now();
-
-			try {
-				window.sessionStorage.setItem(FLASH_KEY, String(startedAt));
-			}
-			catch (e) { }
-		}
-
-		let waited = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
-
-		setPhase(phaseFor(waited));
-		elapsed.textContent = fmtDuration(waited);
-
-		const startWaiting = () => {
-			this.stopFlashTimer();
-			this.waitForDevice(steps.reconnect, card, resume);
-		};
-
-		if (waited >= 65) {
-			startWaiting();
-
-			return;
-		}
-
-		this.flashTimer = window.setInterval(() => {
-			waited++;
-			elapsed.textContent = fmtDuration(waited);
-			setPhase(phaseFor(waited));
-
-			if (waited >= 65)
-				startWaiting();
-		}, 1000);
-	},
-
-	stopFlashTimer: function() {
-		if (this.flashTimer) {
-			window.clearInterval(this.flashTimer);
-			this.flashTimer = null;
-		}
-	},
-
-	/* Tear the overlay down again when the backend refused to start, so the
-	 * user is not left staring at a spinner that will never finish. */
-	hideFlashing: function() {
-		this.stopFlashTimer();
-
-		if (this.flashNode && this.flashNode.parentNode)
-			this.flashNode.parentNode.removeChild(this.flashNode);
-
-		this.flashNode = null;
-
-		if (this.unloadGuard) {
-			window.removeEventListener('beforeunload', this.unloadGuard);
-			this.unloadGuard = null;
-		}
-
-		document.body.classList.remove('ota-flashing');
-	},
-
-	/* Leave the overlay for good and hand the browser over to the device.
-	 * The beforeunload guard has to go first, otherwise the browser asks for
-	 * confirmation and the automatic redirect never happens. */
-	finishFlash: function(url) {
-		clearFlashMark();
-
-		if (this.unloadGuard) {
-			window.removeEventListener('beforeunload', this.unloadGuard);
-			this.unloadGuard = null;
-		}
-
-		window.location.replace(url);
-	},
-
-	/* Wait for the device to go away and come back, then hand the browser
-	 * over to it. A successful probe alone means nothing: the web server keeps
-	 * answering while sysupgrade is still writing the image, which is exactly
-	 * how the overlay used to disappear after a couple of minutes. */
-	waitForDevice: function(stepNode, card, resume) {
-		// After a reboot the LuCI session is gone, so land on the device root:
-		// the browser follows it to the login page instead of a dead view.
-		const target = window.location.protocol + '//' + window.location.host;
-		const url = target;
-		const hint = E('p', { 'class': 'ota-overlay-foot' }, [
-			_('If the page does not come back, open this address manually:') + ' ',
-			E('a', { 'href': url }, url)
-		]);
-
-		if (card)
-			card.appendChild(hint);
-
-		const started = Date.now();
-		let wentDown = false;
-
-		const giveUp = () => {
-			clearFlashMark();
-			this.hideFlashing();
-			ui.addNotification(null, E('p', {}, _('The device did not come back. Check it and open the web interface manually.')), 'warning');
-		};
-
-		const probe = () => {
-			if ((Date.now() - started) > FLASH_MAX_MS) {
-				giveUp();
-
-				return;
-			}
-
-			const img = new Image();
-
-			img.onload = () => {
-				if (resume || wentDown) {
-					if (stepNode)
-						stepNode.className = 'done';
-
-					this.finishFlash(url);
-
-					return;
-				}
-
-				// The old system (or the still running write) answers: keep
-				// showing the overlay and look again in a moment.
-				window.setTimeout(probe, 3000);
-			};
-
-			img.onerror = () => {
-				wentDown = true;
-				window.setTimeout(probe, 3000);
-			};
-
-			img.src = target + L.resource('icons/loading.svg') + '?t=' + Date.now();
-		};
-
-		probe();
 	},
 
 	startPolling: function() {

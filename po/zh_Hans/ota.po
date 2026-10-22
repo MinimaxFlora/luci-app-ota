@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-22 11:06+0800\n"
+"PO-Revision-Date: 2026-10-22 11:40+0800\n"
 "Last-Translator: MinimaxFlora <MinimaxFlora@users.noreply.github.com>\n"
 "Language-Team: Chinese\n"
 "Language: zh_Hans\n"
@@ -18,11 +18,11 @@ msgstr "（据版本号）"
 msgid "/sbin/sysupgrade is not available on this system."
 msgstr "系统中没有 /sbin/sysupgrade。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:671
+#: htdocs/luci-static/resources/view/ota/update.js:635
 msgid "A new firmware is available"
 msgstr "发现新固件"
 
-#: htdocs/luci-static/resources/view/ota/update.js:854
+#: htdocs/luci-static/resources/view/ota/update.js:818
 msgid "A new firmware is available."
 msgstr "发现可用的新固件。"
 
@@ -40,32 +40,32 @@ msgstr "允许使用 http:// 地址并跳过 TLS 证书校验。除非确有必�
 msgid "An update index URL is required."
 msgstr "必须填写更新索引地址。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:558
+#: htdocs/luci-static/resources/view/ota/update.js:522
 msgid "Architecture"
 msgstr "架构"
 
-#: htdocs/luci-static/resources/view/ota/update.js:652
+#: htdocs/luci-static/resources/view/ota/update.js:616
 msgid "Available build"
 msgstr "新固件构建时间"
 
-#: htdocs/luci-static/resources/view/ota/update.js:650
+#: htdocs/luci-static/resources/view/ota/update.js:614
 msgid "Available version"
 msgstr "可用版本"
 
-#: htdocs/luci-static/resources/view/ota/update.js:556
-#: htdocs/luci-static/resources/view/ota/update.js:931
+#: htdocs/luci-static/resources/view/ota/update.js:520
+#: htdocs/luci-static/resources/view/ota/update.js:895
 msgid "Build date"
 msgstr "构建时间"
 
-#: htdocs/luci-static/resources/view/ota/update.js:937
+#: htdocs/luci-static/resources/view/ota/update.js:901
 msgid "Cancel"
 msgstr "取消"
 
-#: htdocs/luci-static/resources/view/ota/update.js:717
+#: htdocs/luci-static/resources/view/ota/update.js:681
 msgid "Cancel download"
 msgstr "取消下载"
 
-#: htdocs/luci-static/resources/view/ota/update.js:912
+#: htdocs/luci-static/resources/view/ota/update.js:876
 msgid "Cancel failed: %s"
 msgstr "取消失败：%s"
 
@@ -75,25 +75,25 @@ msgid ""
 "neither a build date nor a version."
 msgstr "无法判断是否有新固件：索引条目既没有构建时间也没有版本号。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:684
+#: htdocs/luci-static/resources/view/ota/update.js:648
 msgid "Changelog"
 msgstr "更新日志"
 
-#: htdocs/luci-static/resources/view/ota/update.js:637
-#: htdocs/luci-static/resources/view/ota/update.js:678
-#: htdocs/luci-static/resources/view/ota/update.js:823
+#: htdocs/luci-static/resources/view/ota/update.js:601
+#: htdocs/luci-static/resources/view/ota/update.js:642
+#: htdocs/luci-static/resources/view/ota/update.js:787
 msgid "Check again"
 msgstr "重新检查"
 
-#: htdocs/luci-static/resources/view/ota/update.js:871
+#: htdocs/luci-static/resources/view/ota/update.js:835
 msgid "Check failed: %s"
 msgstr "检查失败：%s"
 
-#: htdocs/luci-static/resources/view/ota/update.js:377
+#: htdocs/luci-static/resources/view/ota/update.js:362
 msgid "Check for new firmware, download it and install it with sysupgrade."
 msgstr "检查并下载新固件，然后通过 sysupgrade 写入。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:618
+#: htdocs/luci-static/resources/view/ota/update.js:582
 msgid "Check for updates"
 msgstr "检查更新"
 
@@ -101,7 +101,7 @@ msgstr "检查更新"
 msgid "Check on page load"
 msgstr "打开页面时检查"
 
-#: htdocs/luci-static/resources/view/ota/update.js:843
+#: htdocs/luci-static/resources/view/ota/update.js:807
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
 
@@ -109,7 +109,7 @@ msgstr "正在检查更新…"
 msgid "Choose the GitHub proxy acceleration site."
 msgstr "选择 GitHub 代理加速站点。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:933
+#: htdocs/luci-static/resources/view/ota/update.js:897
 #: root/usr/share/luci/menu.d/luci-app-ota.json:24
 msgid "Configuration"
 msgstr "配置"
@@ -126,7 +126,7 @@ msgid ""
 "connection."
 msgstr "无法获取更新索引，请检查网络连接。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:573
+#: htdocs/luci-static/resources/view/ota/update.js:537
 msgid "Current firmware"
 msgstr "当前固件"
 
@@ -135,68 +135,60 @@ msgid "Custom"
 msgstr "自定义"
 
 #: htdocs/luci-static/resources/view/ota/settings.js:60
-#: htdocs/luci-static/resources/view/ota/update.js:559
+#: htdocs/luci-static/resources/view/ota/update.js:523
 msgid "Device key"
 msgstr "设备标识"
 
-#: htdocs/luci-static/resources/view/ota/update.js:800
+#: htdocs/luci-static/resources/view/ota/update.js:764
 msgid "Discard download"
 msgstr "放弃下载"
-
-#: htdocs/luci-static/resources/view/ota/update.js:1024
-msgid "Do not power off the device."
-msgstr "请勿断开电源。"
 
 #: htdocs/luci-static/resources/view/ota/settings.js:45
 msgid "Download acceleration site"
 msgstr "下载加速站点"
 
-#: htdocs/luci-static/resources/view/ota/update.js:822
+#: htdocs/luci-static/resources/view/ota/update.js:786
 msgid "Download again"
 msgstr "重新下载"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1227
-#: htdocs/luci-static/resources/view/ota/update.js:910
+#: htdocs/luci-static/resources/view/ota/update.js:874
+#: htdocs/luci-static/resources/view/ota/update.js:995
 msgid "Download canceled."
 msgstr "下载已取消。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:899
+#: htdocs/luci-static/resources/view/ota/update.js:863
 msgid "Download failed: %s"
 msgstr "下载失败：%s"
 
-#: htdocs/luci-static/resources/view/ota/update.js:677
+#: htdocs/luci-static/resources/view/ota/update.js:641
 msgid "Download firmware"
 msgstr "下载固件"
 
-#: htdocs/luci-static/resources/view/ota/update.js:654
+#: htdocs/luci-static/resources/view/ota/update.js:618
 msgid "Download site"
 msgstr "下载站点"
 
-#: htdocs/luci-static/resources/view/ota/update.js:704
+#: htdocs/luci-static/resources/view/ota/update.js:668
 msgid "Downloading firmware"
 msgstr "正在下载固件"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1030
-msgid "Elapsed"
-msgstr "已等待"
-
-#: htdocs/luci-static/resources/view/ota/update.js:657
+#: htdocs/luci-static/resources/view/ota/update.js:621
 msgid "File"
 msgstr "文件名"
 
-#: htdocs/luci-static/resources/view/ota/update.js:769
+#: htdocs/luci-static/resources/view/ota/update.js:733
 msgid "Firmware downloaded and verified"
 msgstr "固件已下载并通过校验"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1221
+#: htdocs/luci-static/resources/view/ota/update.js:989
 msgid "Firmware downloaded and verified."
 msgstr "固件已下载并通过校验。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:613
+#: htdocs/luci-static/resources/view/ota/update.js:577
 msgid "Firmware update"
 msgstr "固件更新"
 
-#: htdocs/luci-static/resources/view/ota/update.js:555
+#: htdocs/luci-static/resources/view/ota/update.js:519
 msgid "Firmware version"
 msgstr "固件版本"
 
@@ -204,32 +196,24 @@ msgstr "固件版本"
 msgid "Grant access to the OTA firmware update functionality"
 msgstr "授予在线升级功能的访问权限"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1143
-msgid "If the page does not come back, open this address manually:"
-msgstr "如果页面没有自动恢复，请手动打开这个地址："
-
-#: htdocs/luci-static/resources/view/ota/update.js:796
-#: htdocs/luci-static/resources/view/ota/update.js:921
+#: htdocs/luci-static/resources/view/ota/update.js:760
+#: htdocs/luci-static/resources/view/ota/update.js:885
 msgid "Install firmware"
 msgstr "安装固件"
 
-#: htdocs/luci-static/resources/view/ota/update.js:651
+#: htdocs/luci-static/resources/view/ota/update.js:615
 msgid "Installed build"
 msgstr "已安装版本构建时间"
 
-#: htdocs/luci-static/resources/view/ota/update.js:649
+#: htdocs/luci-static/resources/view/ota/update.js:613
 msgid "Installed version"
 msgstr "已安装版本"
 
-#: htdocs/luci-static/resources/view/ota/update.js:634
+#: htdocs/luci-static/resources/view/ota/update.js:598
 msgid "Installed version: %s"
 msgstr "已安装版本：%s"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1022
-msgid "Installing firmware"
-msgstr "正在安装固件"
-
-#: htdocs/luci-static/resources/view/ota/update.js:790
+#: htdocs/luci-static/resources/view/ota/update.js:754
 msgid "Keep settings and retain the current configuration"
 msgstr "保留设置并继续使用当前配置"
 
@@ -247,8 +231,8 @@ msgstr "在更新索引中标识此设备的键名。留空则根据当前固件
 msgid "Keys in the index: %s"
 msgstr "索引中的设备标识：%s"
 
-#: htdocs/luci-static/resources/view/ota/update.js:635
-#: htdocs/luci-static/resources/view/ota/update.js:680
+#: htdocs/luci-static/resources/view/ota/update.js:599
+#: htdocs/luci-static/resources/view/ota/update.js:644
 msgid "Last checked: %s"
 msgstr "上次检查：%s"
 
@@ -268,7 +252,7 @@ msgstr "打开概览页面且上次检查超过十分钟时，自动检查是否
 msgid "Looked up key(s): %s"
 msgstr "已尝试的设备标识：%s"
 
-#: htdocs/luci-static/resources/view/ota/update.js:554
+#: htdocs/luci-static/resources/view/ota/update.js:518
 msgid "Model"
 msgstr "设备型号"
 
@@ -280,7 +264,7 @@ msgstr "设备上既没有 curl 也没有 uclient-fetch。"
 msgid "No update index URL is configured yet."
 msgstr "尚未配置更新索引地址。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:616
+#: htdocs/luci-static/resources/view/ota/update.js:580
 msgid "No update index has been configured for this firmware yet."
 msgstr "此固件尚未配置更新索引。"
 
@@ -289,7 +273,7 @@ msgid "Not enough free space in /tmp to download this firmware."
 msgstr "临时空间（/tmp）不足，无法下载此固件。"
 
 #: htdocs/luci-static/resources/view/ota/settings.js:22
-#: htdocs/luci-static/resources/view/ota/update.js:376
+#: htdocs/luci-static/resources/view/ota/update.js:361
 #: root/usr/share/luci/menu.d/luci-app-ota.json:3
 msgid "OTA Firmware Update"
 msgstr "在线升级"
@@ -310,24 +294,16 @@ msgstr "请先检查更新。"
 msgid "Preselect the \"keep settings\" option before installing a firmware."
 msgstr "安装固件前默认勾选“保留设置”。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:615
+#: htdocs/luci-static/resources/view/ota/update.js:579
 msgid "Press \"Check for updates\" to look for a new firmware."
 msgstr "点击“检查更新”查找新固件。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1014
-msgid "Rebooting the device"
-msgstr "重启设备"
-
-#: htdocs/luci-static/resources/view/ota/update.js:1015
-msgid "Reconnecting to the web interface"
-msgstr "重新连接管理界面"
-
-#: htdocs/luci-static/resources/view/ota/update.js:393
-#: htdocs/luci-static/resources/view/ota/update.js:394
+#: htdocs/luci-static/resources/view/ota/update.js:378
+#: htdocs/luci-static/resources/view/ota/update.js:379
 msgid "Refresh"
 msgstr "刷新"
 
-#: htdocs/luci-static/resources/view/ota/update.js:710
+#: htdocs/luci-static/resources/view/ota/update.js:674
 msgid "Remaining"
 msgstr "剩余"
 
@@ -337,12 +313,12 @@ msgid ""
 "with broken IPv6 connectivity."
 msgstr "限制索引和固件下载只使用 IPv4，适用于 IPv6 连接不正常的环境。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:406
+#: htdocs/luci-static/resources/view/ota/update.js:391
 msgid "Retry"
 msgstr "重试"
 
-#: htdocs/luci-static/resources/view/ota/update.js:658
-#: htdocs/luci-static/resources/view/ota/update.js:780
+#: htdocs/luci-static/resources/view/ota/update.js:622
+#: htdocs/luci-static/resources/view/ota/update.js:744
 msgid "SHA256"
 msgstr "SHA256"
 
@@ -350,25 +326,25 @@ msgstr "SHA256"
 msgid "Settings"
 msgstr "设置"
 
-#: htdocs/luci-static/resources/view/ota/update.js:653
-#: htdocs/luci-static/resources/view/ota/update.js:776
-#: htdocs/luci-static/resources/view/ota/update.js:929
+#: htdocs/luci-static/resources/view/ota/update.js:617
+#: htdocs/luci-static/resources/view/ota/update.js:740
+#: htdocs/luci-static/resources/view/ota/update.js:893
 msgid "Size"
 msgstr "大小"
 
-#: htdocs/luci-static/resources/view/ota/update.js:709
+#: htdocs/luci-static/resources/view/ota/update.js:673
 msgid "Speed"
 msgstr "速度"
 
-#: htdocs/luci-static/resources/view/ota/update.js:952
+#: htdocs/luci-static/resources/view/ota/update.js:916
 msgid "Start installation"
 msgstr "开始安装"
 
-#: htdocs/luci-static/resources/view/ota/update.js:698
+#: htdocs/luci-static/resources/view/ota/update.js:662
 msgid "Starting download…"
 msgstr "正在开始下载…"
 
-#: htdocs/luci-static/resources/view/ota/update.js:557
+#: htdocs/luci-static/resources/view/ota/update.js:521
 msgid "Target"
 msgstr "目标平台"
 
@@ -376,7 +352,7 @@ msgstr "目标平台"
 msgid "The OTA backend could not be executed."
 msgstr "无法执行 OTA 后台程序。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:402
+#: htdocs/luci-static/resources/view/ota/update.js:387
 msgid "The OTA backend did not respond."
 msgstr "OTA 后台没有响应。"
 
@@ -388,17 +364,11 @@ msgstr "地址必须以 http:// 或 https:// 开头。"
 msgid "The acceleration site has to be a URL starting with http:// or https://."
 msgstr "加速站点必须是 http:// 或 https:// 开头的网址。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1156
-msgid ""
-"The device did not come back. Check it and open the web interface "
-"manually."
-msgstr "设备没有恢复，请检查设备并手动打开管理界面。"
-
-#: htdocs/luci-static/resources/view/ota/update.js:924
+#: htdocs/luci-static/resources/view/ota/update.js:888
 msgid "The device will be flashed and rebooted. This takes a few minutes."
 msgstr "设备会被写入新固件并自动重启，大约需要几分钟。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:802
+#: htdocs/luci-static/resources/view/ota/update.js:766
 msgid "The device will reboot after the firmware has been written."
 msgstr "固件写入完成后设备会自动重启。"
 
@@ -414,11 +384,6 @@ msgstr "无法将下载的镜像移动到目标位置。"
 msgid "The downloaded image failed the SHA256 verification and was discarded."
 msgstr "下载的镜像未通过 SHA256 校验，已删除。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:441
-#: htdocs/luci-static/resources/view/ota/update.js:967
-msgid "The firmware is being written, please do not leave this page."
-msgstr "固件正在写入，请不要离开本页面。"
-
 #: htdocs/luci-static/resources/view/ota/update.js:283
 msgid "The firmware is not completely downloaded yet."
 msgstr "固件尚未下载完成。"
@@ -428,10 +393,6 @@ msgid ""
 "The index entry has no SHA256 checksum. The download was blocked for "
 "safety reasons."
 msgstr "索引条目缺少 SHA256 校验值，出于安全考虑已阻止下载。"
-
-#: htdocs/luci-static/resources/view/ota/update.js:1026
-msgid "The page reconnects automatically once it is back."
-msgstr "设备恢复后页面会自动重连。"
 
 #: htdocs/luci-static/resources/view/ota/update.js:274
 msgid ""
@@ -460,7 +421,7 @@ msgid ""
 "from the version string."
 msgstr "该固件没有写入构建时间戳，这里显示的日期由版本号推得。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:633
+#: htdocs/luci-static/resources/view/ota/update.js:597
 msgid "This firmware is up to date"
 msgstr "已是最新固件"
 
@@ -475,11 +436,11 @@ msgstr "JSON 更新索引的地址。该地址必须能被路由器本身访问�
 msgid "Unknown error."
 msgstr "未知错误。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:810
+#: htdocs/luci-static/resources/view/ota/update.js:774
 msgid "Update failed"
 msgstr "更新失败"
 
-#: htdocs/luci-static/resources/view/ota/update.js:560
+#: htdocs/luci-static/resources/view/ota/update.js:524
 msgid "Update index"
 msgstr "更新索引"
 
@@ -491,48 +452,36 @@ msgstr "更新索引地址"
 msgid "Use IPv4 only"
 msgstr "仅使用 IPv4"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1033
-msgid "Usually takes 1-3 minutes."
-msgstr "通常需要 1–3 分钟。"
-
 #: htdocs/luci-static/resources/view/ota/settings.js:75
 msgid "Validate the image before installing"
 msgstr "安装前校验镜像"
 
-#: htdocs/luci-static/resources/view/ota/update.js:1013
-msgid "Verifying the image"
-msgstr "校验镜像"
-
-#: htdocs/luci-static/resources/view/ota/update.js:772
-#: htdocs/luci-static/resources/view/ota/update.js:927
+#: htdocs/luci-static/resources/view/ota/update.js:736
+#: htdocs/luci-static/resources/view/ota/update.js:891
 msgid "Version"
 msgstr "版本"
-
-#: htdocs/luci-static/resources/view/ota/update.js:1012
-msgid "Writing the system partition"
-msgstr "写入系统分区"
 
 #: htdocs/luci-static/resources/view/ota/settings.js:62
 msgid "detect automatically"
 msgstr "自动识别"
 
-#: htdocs/luci-static/resources/view/ota/update.js:656
+#: htdocs/luci-static/resources/view/ota/update.js:620
 msgid "direct (GitHub)"
 msgstr "直连 GitHub"
 
-#: htdocs/luci-static/resources/view/ota/update.js:752
+#: htdocs/luci-static/resources/view/ota/update.js:716
 msgid "downloading…"
 msgstr "下载中…"
 
-#: htdocs/luci-static/resources/view/ota/update.js:934
+#: htdocs/luci-static/resources/view/ota/update.js:898
 msgid "erased"
 msgstr "清除"
 
-#: htdocs/luci-static/resources/view/ota/update.js:934
+#: htdocs/luci-static/resources/view/ota/update.js:898
 msgid "kept"
 msgstr "保留"
 
-#: htdocs/luci-static/resources/view/ota/update.js:560
+#: htdocs/luci-static/resources/view/ota/update.js:524
 msgid "not configured"
 msgstr "未配置"
 
@@ -544,10 +493,10 @@ msgstr "未记录"
 msgid "sysupgrade rejected the downloaded image (wrong device or broken file)."
 msgstr "sysupgrade 拒绝了下载的镜像（设备不匹配或文件损坏）。"
 
-#: htdocs/luci-static/resources/view/ota/update.js:657
+#: htdocs/luci-static/resources/view/ota/update.js:621
 msgid "unknown"
 msgstr "未知"
 
-#: htdocs/luci-static/resources/view/ota/update.js:748
+#: htdocs/luci-static/resources/view/ota/update.js:712
 msgid "verifying…"
 msgstr "正在校验…"
