@@ -9,13 +9,11 @@ return view.extend({
 		// Mirrors offered in the dropdown of the acceleration site field.
 		const presets = [
 			'https://gh-proxy.com',
+			'https://gh-proxy.tatalvpai.vip',
 			'https://gh.acmsz.top',
-			'https://ghp.keleyaa.com',
+			'https://ghproxy.net',
 			'https://git.yylx.win',
-			'https://xsadwsd.kdns.fr',
-			'https://fastly.jsdelivr.net',
-			'https://testingcf.jsdelivr.net',
-			'https://cdn.jsdelivr.net'
+			'https://xsadwsd.kdns.fr'
 		];
 
 		m = new form.Map('ota', _('OTA Firmware Update'),
@@ -94,167 +92,43 @@ return view.extend({
 			if (!input)
 				return node;
 
-			const reference = node.querySelector('input[id$="api_url"]');
-			const width = reference ? Math.round(reference.getBoundingClientRect().width) : 0;
 			const field = input.parentNode;
 
-			// Same widget as the mosdns DNS picker: a box that opens a panel
-			// with the known mirrors and, at the bottom of that panel, a field
-			// to type your own value. Enter turns it into a selected entry.
-			const combo = E('div', { 'class': 'ota-combo' });
-			const control = E('div', { 'class': 'ota-combo-box', 'tabindex': '0' });
-			const caption = E('span', { 'class': 'ota-combo-caption' }, '');
-			const caret = E('span', { 'class': 'ota-combo-caret' });
-			const panel = E('div', { 'class': 'ota-combo-panel', 'style': 'display:none' });
+			// Native <select> plus the text field: the select works on every
+			// theme, while the field still accepts a custom mirror.
+			const select = E('select', { 'class': 'cbi-input-select ota-proxy-select' });
 
-			control.appendChild(caption);
-			control.appendChild(caret);
-			combo.appendChild(control);
-			combo.appendChild(panel);
+			presets.forEach((value) => {
+				select.appendChild(E('option', { 'value': value }, value));
+			});
+			select.appendChild(E('option', { 'value': '__custom__' }, '－ ' + _('Custom') + ' －'));
 
-			const values = presets.slice();
-			const current = (input.value || '').trim() || presets[0];
+			const syncSelect = () => {
+				const value = (input.value || '').trim();
 
-			if (values.indexOf(current) < 0)
-				values.unshift(current);
-
-			const setValue = (value) => {
-				input.value = value;
-				caption.textContent = value;
+				select.value = presets.indexOf(value) >= 0 ? value : '__custom__';
 			};
 
-			const close = () => {
-				panel.style.display = 'none';
-			};
-
-			const commitCustom = (raw) => {
-				const value = (raw || '').trim();
-
-				if (value === '') {
-					close();
+			select.addEventListener('change', () => {
+				if (select.value === '__custom__') {
+					input.focus();
 					return;
 				}
 
-				if (values.indexOf(value) < 0)
-					values.push(value);
-
-				setValue(value);
-				close();
-			};
-
-			const buildPanel = () => {
-				while (panel.firstChild)
-					panel.removeChild(panel.firstChild);
-
-				values.forEach((value) => {
-					const row = E('div', {
-						'class': 'ota-combo-option' + (value === input.value ? ' ota-combo-selected' : '')
-					}, value);
-
-					row.addEventListener('mousedown', (ev) => {
-						ev.preventDefault();
-						setValue(value);
-						close();
-					});
-
-					panel.appendChild(row);
-				});
-
-				const custom = E('input', {
-					'type': 'text',
-					'class': 'ota-combo-custom',
-					'placeholder': '－ ' + _('Custom') + ' －'
-				});
-
-				custom.addEventListener('keydown', (ev) => {
-					if (ev.key === 'Enter') {
-						ev.preventDefault();
-						commitCustom(custom.value);
-					}
-					else if (ev.key === 'Escape') {
-						close();
-					}
-				});
-
-				panel.appendChild(custom);
-				return custom;
-			};
-
-			let customField = null;
-
-			control.addEventListener('mousedown', (ev) => {
-				ev.preventDefault();
-
-				if (panel.style.display === 'none') {
-					customField = buildPanel();
-					panel.style.display = 'block';
-					control.focus();
-				}
-				else {
-					close();
-				}
+				input.value = select.value;
+				input.dispatchEvent(new Event('change', { bubbles: true }));
 			});
 
-			document.addEventListener('mousedown', (ev) => {
-				if (panel.style.display !== 'none' && !combo.contains(ev.target))
-					close();
-			});
+			input.addEventListener('input', syncSelect);
+			input.addEventListener('change', syncSelect);
 
-			setValue(current);
+			select.style.display = 'block';
+			select.style.width = '100%';
+			select.style.marginBottom = '4px';
 
-			// render() runs on a detached node, so the width has to be measured
-			// once LuCI has inserted it into the page.
-			window.setTimeout(() => {
-				const ref = node.querySelector('input[id$="api_url"]');
+			syncSelect();
 
-				if (!ref)
-					return;
-
-				const w = Math.round(ref.getBoundingClientRect().width);
-
-				if (w > 0) {
-					combo.style.width = w + 'px';
-					control.style.width = w + 'px';
-				}
-			}, 0);
-
-			if (width > 0) {
-				combo.style.width = width + 'px';
-				control.style.width = width + 'px';
-			}
-
-			input.style.display = 'none';
-			input.removeAttribute('list');
-			input.removeAttribute('autocomplete');
-
-			field.style.display = 'block';
-
-			node.insertBefore(E('style', {}, [
-				'.ota-combo { position: relative; }',
-				'.ota-combo-box { display: flex; align-items: center; justify-content: space-between; gap: .5em;' +
-					' min-height: 38px; padding: 0 .75em; box-sizing: border-box; cursor: pointer;' +
-					' border: 1px solid rgba(128,128,128,.45); border-radius: 6px;' +
-					' background: var(--background-color-high, #fff); color: inherit; }',
-				'.ota-combo-box:focus { outline: none; border-color: #2e9d72; }',
-				'.ota-combo-caption { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
-				'.ota-combo-caret { flex: none; width: 0; height: 0; border-left: 5px solid transparent;' +
-					' border-right: 5px solid transparent; border-top: 6px solid #999; }',
-				'.ota-combo-panel { position: absolute; z-index: 1200; left: 0; right: 0; top: calc(100% + 4px);' +
-					' max-height: 640px; overflow: auto; padding: 6px;' +
-					' background: var(--background-color-high, #fff); color: var(--text-color, inherit);' +
-					' border: 1px solid rgba(128,128,128,.35); border-radius: 8px;' +
-					' box-shadow: 0 10px 28px rgba(0,0,0,.18); }',
-				'.ota-combo-option { padding: .45em .6em; border-radius: 6px; cursor: pointer;' +
-					' white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
-				'.ota-combo-option:hover { background: rgba(46,157,114,.12); }',
-				'.ota-combo-selected { background: rgba(46,157,114,.16); font-weight: 600; }',
-				'.ota-combo-custom { width: 100%; box-sizing: border-box; margin-top: 6px; padding: .45em .6em;' +
-					' font: inherit; border: 1px solid rgba(128,128,128,.45); border-radius: 6px;' +
-					' background: var(--background-color-high, #fff); color: inherit; }'
-			].join('\n')), node.firstChild);
-
-			field.appendChild(combo);
-			field.appendChild(input);
+			field.insertBefore(select, input);
 
 			return node;
 		});
