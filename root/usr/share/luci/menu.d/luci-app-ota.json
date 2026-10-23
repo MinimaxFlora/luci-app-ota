@@ -25,7 +25,7 @@
 		"order": 2,
 		"action": {
 			"type": "view",
-			"path": "ota/settings"
+			"path": "ota/settings_v2"
 		}
 	}
 }

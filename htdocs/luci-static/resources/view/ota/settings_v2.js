@@ -1,6 +1,7 @@
 'use strict';
 'require view';
 'require form';
+'require uci';
 
 return view.extend({
 	render: function() {
@@ -15,6 +16,9 @@ return view.extend({
 			'https://git.yylx.win',
 			'https://xsadwsd.kdns.fr'
 		];
+
+		const currentProxy = () => (uci.get('ota', 'config', 'download_proxy') || '').trim();
+		const isPreset = (value) => presets.indexOf(value) >= 0;
 
 		m = new form.Map('ota', _('OTA Firmware Update'),
 			_('Configure where LuCI looks for firmware updates and how they are handled.'));
@@ -39,11 +43,39 @@ return view.extend({
 			return true;
 		};
 
-		o = s.option(form.Value, 'download_proxy', _('Download acceleration site'),
+		// A native dropdown, so the mirror can always be changed. "Custom"
+		// reveals the text field below instead of keeping two inputs visible.
+		o = s.option(form.ListValue, 'download_proxy', _('Download acceleration site'),
 			_('Choose the GitHub proxy acceleration site.'));
-		o.placeholder = presets[0];
+		presets.forEach((value) => o.value(value, value));
+		o.value('__custom__', _('Custom…'));
 		o.default = presets[0];
 		o.rmempty = true;
+		o.cfgvalue = function() {
+			return isPreset(currentProxy()) ? currentProxy() : '__custom__';
+		};
+		o.write = function(section_id, value) {
+			if (value && value !== '__custom__')
+				uci.set('ota', 'config', 'download_proxy', value);
+		};
+		o.remove = function() {
+			uci.remove('ota', 'config', 'download_proxy');
+		};
+
+		o = s.option(form.Value, 'download_proxy_custom', _('Custom download site'),
+			_('Only used when "Custom" is selected above.'));
+		o.depends('download_proxy', '__custom__');
+		o.placeholder = 'https://...';
+		o.rmempty = true;
+		o.cfgvalue = function() {
+			return isPreset(currentProxy()) ? '' : currentProxy();
+		};
+		o.write = function(section_id, value) {
+			if (value)
+				uci.set('ota', 'config', 'download_proxy', value.trim());
+		};
+		o.remove = function() {
+		};
 		o.validate = function(section_id, value) {
 			if (!value)
 				return true;
@@ -84,53 +116,6 @@ return view.extend({
 		o.default = '0';
 		o.rmempty = false;
 
-		const rendered = m.render();
-
-		return Promise.resolve(rendered).then((node) => {
-			const input = node.querySelector('input[id$="download_proxy"]');
-
-			if (!input)
-				return node;
-
-			const field = input.parentNode;
-
-			// Native <select> plus the text field: the select works on every
-			// theme, while the field still accepts a custom mirror.
-			const select = E('select', { 'class': 'cbi-input-select ota-proxy-select' });
-
-			presets.forEach((value) => {
-				select.appendChild(E('option', { 'value': value }, value));
-			});
-			select.appendChild(E('option', { 'value': '__custom__' }, '－ ' + _('Custom') + ' －'));
-
-			const syncSelect = () => {
-				const value = (input.value || '').trim();
-
-				select.value = presets.indexOf(value) >= 0 ? value : '__custom__';
-			};
-
-			select.addEventListener('change', () => {
-				if (select.value === '__custom__') {
-					input.focus();
-					return;
-				}
-
-				input.value = select.value;
-				input.dispatchEvent(new Event('change', { bubbles: true }));
-			});
-
-			input.addEventListener('input', syncSelect);
-			input.addEventListener('change', syncSelect);
-
-			select.style.display = 'block';
-			select.style.width = '100%';
-			select.style.marginBottom = '4px';
-
-			syncSelect();
-
-			field.insertBefore(select, input);
-
-			return node;
-		});
+		return m.render();
 	}
 });
