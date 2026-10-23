@@ -8,7 +8,6 @@ return view.extend({
 
 		// Mirrors offered in the dropdown of the acceleration site field.
 		const presets = [
-			'https://gh-proxy.kejizero.xyz',
 			'https://gh-proxy.com',
 			'https://gh.acmsz.top',
 			'https://ghp.keleyaa.com',
