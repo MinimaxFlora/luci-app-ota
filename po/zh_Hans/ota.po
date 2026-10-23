@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ota\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-24 03:08+0800\n"
+"PO-Revision-Date: 2026-10-24 03:09+0800\n"
 "Last-Translator: MinimaxFlora <MinimaxFlora@users.noreply.github.com>\n"
 "Language-Team: Chinese\n"
 "Language: zh_Hans\n"
@@ -26,17 +26,17 @@ msgstr "发现新固件"
 msgid "A new firmware is available."
 msgstr "发现可用的新固件。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:71
+#: htdocs/luci-static/resources/view/ota/settings.js:71
 msgid "Allow insecure connections"
 msgstr "允许不安全的连接"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:72
+#: htdocs/luci-static/resources/view/ota/settings.js:72
 msgid ""
 "Allow plain http:// URLs and skip TLS certificate verification. Only "
 "enable this if you really have to."
 msgstr "允许使用 http:// 地址并跳过 TLS 证书校验。除非确有必要，否则不要开启。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:32
+#: htdocs/luci-static/resources/view/ota/settings.js:32
 msgid "An update index URL is required."
 msgstr "必须填写更新索引地址。"
 
@@ -97,7 +97,7 @@ msgstr "检查并下载新固件，然后通过 sysupgrade 写入。"
 msgid "Check for updates"
 msgstr "检查更新"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:51
+#: htdocs/luci-static/resources/view/ota/settings.js:51
 msgid "Check on page load"
 msgstr "打开页面时检查"
 
@@ -105,7 +105,7 @@ msgstr "打开页面时检查"
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:41
+#: htdocs/luci-static/resources/view/ota/settings.js:41
 msgid "Choose the GitHub proxy acceleration site."
 msgstr "选择 GitHub 代理加速站点。"
 
@@ -114,7 +114,7 @@ msgstr "选择 GitHub 代理加速站点。"
 msgid "Configuration"
 msgstr "配置"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:18
+#: htdocs/luci-static/resources/view/ota/settings.js:18
 msgid ""
 "Configure where LuCI looks for firmware updates and how they are "
 "handled."
@@ -130,7 +130,7 @@ msgstr "无法获取更新索引，请检查网络连接。"
 msgid "Current firmware"
 msgstr "当前固件"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:46
+#: htdocs/luci-static/resources/view/ota/settings.js:46
 #: htdocs/luci-static/resources/view/ota/update.js:529
 msgid "Device key"
 msgstr "设备标识"
@@ -143,7 +143,7 @@ msgstr "放弃下载"
 msgid "Do not power off the device."
 msgstr "请勿断电。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:40
+#: htdocs/luci-static/resources/view/ota/settings.js:40
 msgid "Download acceleration site"
 msgstr "下载加速站点"
 
@@ -229,11 +229,11 @@ msgstr "已安装版本：%s"
 msgid "Keep settings and retain the current configuration"
 msgstr "保留设置并继续使用当前配置"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:56
+#: htdocs/luci-static/resources/view/ota/settings.js:56
 msgid "Keep settings by default"
 msgstr "默认保留设置"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:47
+#: htdocs/luci-static/resources/view/ota/settings.js:47
 msgid ""
 "Key that identifies this device in the update index. Leave empty to "
 "detect it automatically from the running firmware."
@@ -248,13 +248,13 @@ msgstr "索引中的设备标识：%s"
 msgid "Last checked: %s"
 msgstr "上次检查：%s"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:62
+#: htdocs/luci-static/resources/view/ota/settings.js:62
 msgid ""
 "Let sysupgrade check the downloaded image for this device right after "
 "the download. A rejected image is discarded."
 msgstr "下载完成后立即用 sysupgrade 校验镜像是否适用于此设备，被拒绝的镜像会被删除。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:52
+#: htdocs/luci-static/resources/view/ota/settings.js:52
 msgid ""
 "Look for a new firmware when the overview page is opened and the last "
 "check is older than ten minutes."
@@ -284,7 +284,7 @@ msgstr "此固件尚未配置更新索引。"
 msgid "Not enough free space in /tmp to download this firmware."
 msgstr "临时空间（/tmp）不足，无法下载此固件。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:17
+#: htdocs/luci-static/resources/view/ota/settings.js:17
 #: htdocs/luci-static/resources/view/ota/update.js:361
 #: root/usr/share/luci/menu.d/luci-app-ota.json:3
 msgid "OTA Firmware Update"
@@ -302,7 +302,7 @@ msgstr "概览"
 msgid "Please check for updates first."
 msgstr "请先检查更新。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:57
+#: htdocs/luci-static/resources/view/ota/settings.js:57
 msgid "Preselect the \"keep settings\" option before installing a firmware."
 msgstr "安装固件前默认勾选“保留设置”。"
 
@@ -319,7 +319,7 @@ msgstr "刷新"
 msgid "Remaining"
 msgstr "剩余"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:67
+#: htdocs/luci-static/resources/view/ota/settings.js:67
 msgid ""
 "Restrict the index and firmware downloads to IPv4. Helps on networks "
 "with broken IPv6 connectivity."
@@ -334,7 +334,7 @@ msgstr "重试"
 msgid "SHA256"
 msgstr "SHA256"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:22
+#: htdocs/luci-static/resources/view/ota/settings.js:22
 msgid "Settings"
 msgstr "设置"
 
@@ -368,7 +368,7 @@ msgstr "无法执行 OTA 后台程序。"
 msgid "The OTA backend did not respond."
 msgstr "OTA 后台没有响应。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:35
+#: htdocs/luci-static/resources/view/ota/settings.js:35
 msgid "The URL has to start with http:// or https://."
 msgstr "地址必须以 http:// 或 https:// 开头。"
 
@@ -418,7 +418,7 @@ msgstr "更新索引必须使用 HTTPS。如确实需要 HTTP，请在配置中�
 msgid "The update index does not contain a firmware image for this device."
 msgstr "更新索引中没有适用于此设备的固件。"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:24
+#: htdocs/luci-static/resources/view/ota/settings.js:24
 msgid ""
 "The update index is a small JSON file that lists the firmware images "
 "available for each device. It is published by whoever builds the "
@@ -439,7 +439,7 @@ msgstr "该固件没有写入构建时间戳，这里显示的日期由版本号
 msgid "This firmware is up to date"
 msgstr "已是最新固件"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:27
+#: htdocs/luci-static/resources/view/ota/settings.js:27
 msgid ""
 "URL of the JSON update index. It has to be reachable from the router "
 "itself, not from the browser."
@@ -458,15 +458,15 @@ msgstr "更新失败"
 msgid "Update index"
 msgstr "更新索引"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:26
+#: htdocs/luci-static/resources/view/ota/settings.js:26
 msgid "Update index URL"
 msgstr "更新索引地址"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:66
+#: htdocs/luci-static/resources/view/ota/settings.js:66
 msgid "Use IPv4 only"
 msgstr "仅使用 IPv4"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:61
+#: htdocs/luci-static/resources/view/ota/settings.js:61
 msgid "Validate the image before installing"
 msgstr "安装前校验镜像"
 
@@ -475,7 +475,7 @@ msgstr "安装前校验镜像"
 msgid "Version"
 msgstr "版本"
 
-#: htdocs/luci-static/resources/view/ota/settings_v2.js:48
+#: htdocs/luci-static/resources/view/ota/settings.js:48
 msgid "detect automatically"
 msgstr "自动识别"
 
