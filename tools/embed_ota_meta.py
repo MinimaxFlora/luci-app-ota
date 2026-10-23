@@ -36,7 +36,7 @@ from pathlib import Path
 BUILD_JSON = Path("package/base-files/files/etc/ota/build.json")
 UCI_DEFAULTS = Path("package/base-files/files/etc/uci-defaults/90-luci-app-ota")
 
-DEFAULT_DOWNLOAD_PROXY = "https://gh-proxy.com"
+DEFAULT_DOWNLOAD_PROXY = "https://gh-proxy.tatalvpai.vip"
 
 UCI_DEFAULTS_TEMPLATE = """#!/bin/sh
 # Fill in the default index URL and download proxy when the config has no

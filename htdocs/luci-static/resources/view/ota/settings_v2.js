@@ -1,24 +1,18 @@
 'use strict';
 'require view';
 'require form';
-'require uci';
 
 return view.extend({
 	render: function() {
 		let m, s, o;
 
-		// Mirrors offered in the dropdown of the acceleration site field.
+		// Mirrors offered in the dropdown; the first one is the default.
 		const presets = [
-			'https://gh-proxy.com',
 			'https://gh-proxy.tatalvpai.vip',
+			'https://gh-proxy.com',
 			'https://gh.acmsz.top',
-			'https://ghproxy.net',
-			'https://git.yylx.win',
-			'https://xsadwsd.kdns.fr'
+			'https://ghproxy.net'
 		];
-
-		const currentProxy = () => (uci.get('ota', 'config', 'download_proxy') || '').trim();
-		const isPreset = (value) => presets.indexOf(value) >= 0;
 
 		m = new form.Map('ota', _('OTA Firmware Update'),
 			_('Configure where LuCI looks for firmware updates and how they are handled.'));
@@ -43,48 +37,11 @@ return view.extend({
 			return true;
 		};
 
-		// A native dropdown, so the mirror can always be changed. "Custom"
-		// reveals the text field below instead of keeping two inputs visible.
 		o = s.option(form.ListValue, 'download_proxy', _('Download acceleration site'),
 			_('Choose the GitHub proxy acceleration site.'));
 		presets.forEach((value) => o.value(value, value));
-		o.value('__custom__', _('Custom…'));
 		o.default = presets[0];
 		o.rmempty = true;
-		o.cfgvalue = function() {
-			return isPreset(currentProxy()) ? currentProxy() : '__custom__';
-		};
-		o.write = function(section_id, value) {
-			if (value && value !== '__custom__')
-				uci.set('ota', 'config', 'download_proxy', value);
-		};
-		o.remove = function() {
-			uci.remove('ota', 'config', 'download_proxy');
-		};
-
-		o = s.option(form.Value, 'download_proxy_custom', _('Custom download site'),
-			_('Only used when "Custom" is selected above.'));
-		o.depends('download_proxy', '__custom__');
-		o.placeholder = 'https://...';
-		o.rmempty = true;
-		o.cfgvalue = function() {
-			return isPreset(currentProxy()) ? '' : currentProxy();
-		};
-		o.write = function(section_id, value) {
-			if (value)
-				uci.set('ota', 'config', 'download_proxy', value.trim());
-		};
-		o.remove = function() {
-		};
-		o.validate = function(section_id, value) {
-			if (!value)
-				return true;
-
-			if (!/^https?:\/\/[^\s]+$/i.test(value))
-				return _('The acceleration site has to be a URL starting with http:// or https://.');
-
-			return true;
-		};
 
 		o = s.option(form.Value, 'device', _('Device key'),
 			_('Key that identifies this device in the update index. Leave empty to detect it automatically from the running firmware.'));

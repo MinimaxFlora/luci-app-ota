@@ -22,7 +22,7 @@ import { cursor } from 'uci';
 
 const PLUGIN_VERSION = '1.0.0';
 
-const DEFAULT_DOWNLOAD_PROXY = 'https://gh-proxy.com';
+const DEFAULT_DOWNLOAD_PROXY = 'https://gh-proxy.tatalvpai.vip';
 
 const RUN_DIR     = '/var/run/ota';
 const DL_DIR      = RUN_DIR + '/dl';
