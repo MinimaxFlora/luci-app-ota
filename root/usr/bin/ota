@@ -17,7 +17,8 @@
 // Every sub command prints one JSON object on stdout and exits non zero when
 // "ok" is false, which makes it usable from shell scripts as well.
 
-import { readfile, writefile, popen, stat, statvfs, mkdir, unlink } from 'fs';
+import { readfile, writefile, popen, stat, mkdir, unlink } from 'fs';
+import * as fs from 'fs';
 import { cursor } from 'uci';
 
 const PLUGIN_VERSION = '1.0.0';
@@ -1125,8 +1126,10 @@ function do_download() {
 
 	const size = to_int(remote.size, 0);
 
+	// ucode-mod-fs on OpenWrt 24.10 does not export statvfs(). Keep the
+	// optional free-space preflight on newer runtimes and skip it there.
 	if (size > 0) {
-		const vfs = statvfs(DL_DIR);
+		const vfs = fs.statvfs ? fs.statvfs(DL_DIR) : null;
 
 		if (vfs != null && to_int(vfs.freesize, 0) > 0) {
 			const need = size + 8 * 1024 * 1024;
