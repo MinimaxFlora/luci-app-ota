@@ -14,7 +14,7 @@
   - `root/usr/share/rpcd/ucode/*` 基于 ucode 的 rpcd 对象
   - `htdocs/luci-static/resources/view/ota/*.js` 前端视图（`view` / `form` / `rpc` / `E()`）
   - `po/` 多语言，自带简体中文
-- **独立下载站**：页面和索引由 [ZeroWrt-OTA](https://github.com/MinimaxFlora/ZeroWrt-OTA) 维护，插件只负责检查、下载和安装。
+- **独立下载站**：页面和索引由 [Zerowrt-Website](https://github.com/MinimaxFlora/Zerowrt-Website) 维护，插件只负责检查、下载和安装。
 - **不依赖自编译 C 程序**：下载用系统现有的 `curl` / `uclient-fetch` / `wget`，自动选择。
 - **进度真实**：后台下载进程 + 文件大小推算进度，页面显示百分比、速度、剩余时间、进度条。
 - **强制 SHA256 校验**：索引里没有 SHA256 直接拒绝下载；校验失败自动丢弃。
@@ -183,7 +183,7 @@ x86 有两套镜像（传统 BIOS / EFI），因此 x86 会优先匹配带 `+bio
    它会写 `/etc/ota/build.json`（设备名 + 构建时间戳）、同步 `version.date`，
    并把索引地址写进 `/etc/uci-defaults/90-luci-app-ota` 作为默认值（用户改过的配置优先）。
    这一步可以省略，只是固件无法自报构建时间，插件会退回按版本号比较。
-3. **发布索引与页面**：产出镜像后由 [ZeroWrt-OTA](https://github.com/MinimaxFlora/ZeroWrt-OTA)
+3. **发布索引与页面**：产出镜像后由 [Zerowrt-Website](https://github.com/MinimaxFlora/Zerowrt-Website)
    生成 `ota.json` / `history.json` 并部署静态下载站；插件不再内置页面文件。
 
 `--info` 是一个可选的 JSON，字段缺失会自动推导（`device` / `model` 决定索引 key 的别名，
@@ -217,7 +217,7 @@ GitHub Actions 里的最小片段（命令与具体发行版无关）：
 
 下载页、更新日志和双语界面在独立仓库：
 
-- <https://github.com/MinimaxFlora/ZeroWrt-OTA>
+- <https://github.com/MinimaxFlora/Zerowrt-Website>
 - <https://ota.tatalvpai.vip/>
 
 本仓库只包含 LuCI 插件和命令行后端，不再包含 `site/`、`publish_site.sh`
@@ -291,7 +291,7 @@ rpcd ucode 模块 (/usr/share/rpcd/ucode/luci.ota)
 
 **下载页上的设备名不对 / 想加一台设备**
 索引里的 `label` 决定卡片标题；ZeroWrt 会自动取 `.zerowrt-info.json` 里的
-厂商 + 型号，没有 `label` 时用设备标识。页面由独立的 ZeroWrt-OTA 仓库维护。
+厂商 + 型号，没有 `label` 时用设备标识。页面由独立的 Zerowrt-Website 仓库维护。
 
 **如何只看某个设备的更新日志**
 在下载站的更新日志页面选择设备即可筛选。
