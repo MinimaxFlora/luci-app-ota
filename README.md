@@ -14,7 +14,7 @@
   - `root/usr/share/rpcd/ucode/*` 基于 ucode 的 rpcd 对象
   - `htdocs/luci-static/resources/view/ota/*.js` 前端视图（`view` / `form` / `rpc` / `E()`）
   - `po/` 多语言，自带简体中文
-- **自带固件下载页**：`site/` 里的静态页面发布到 GitHub Pages，按设备列出最新镜像、SHA256 与更新日志，并给出 OTA 升级步骤。
+- **独立下载站**：页面和索引由 [ZeroWrt-OTA](https://github.com/MinimaxFlora/ZeroWrt-OTA) 维护，插件只负责检查、下载和安装。
 - **不依赖自编译 C 程序**：下载用系统现有的 `curl` / `uclient-fetch` / `wget`，自动选择。
 - **进度真实**：后台下载进程 + 文件大小推算进度，页面显示百分比、速度、剩余时间、进度条。
 - **强制 SHA256 校验**：索引里没有 SHA256 直接拒绝下载；校验失败自动丢弃。
@@ -37,10 +37,8 @@ root/usr/share/luci/menu.d/luci-app-ota.json
 htdocs/luci-static/resources/view/ota/overview.js       # 系统 -> 在线升级 -> 概览
 htdocs/luci-static/resources/view/ota/configuration.js  # 系统 -> 在线升级 -> 配置
 po/zh_Hans/ota.po                          # 简体中文翻译
-site/                                      # 固件下载页（发布到 gh-pages）
-tools/gen_ota_index.py                     # 生成 ota.json 与 history.json
 tools/embed_ota_meta.py                    # 编译时写 /etc/ota/build.json
-tools/publish_site.sh                      # 把页面与索引推送到 gh-pages 分支
+tools/gen_po.py                            # 生成/更新 po 文件
 ```
 
 ## 安装
@@ -185,9 +183,8 @@ x86 有两套镜像（传统 BIOS / EFI），因此 x86 会优先匹配带 `+bio
    它会写 `/etc/ota/build.json`（设备名 + 构建时间戳）、同步 `version.date`，
    并把索引地址写进 `/etc/uci-defaults/90-luci-app-ota` 作为默认值（用户改过的配置优先）。
    这一步可以省略，只是固件无法自报构建时间，插件会退回按版本号比较。
-3. **发布索引与页面**：产出镜像后跑
-   `tools/publish_site.sh --repo <owner/repo> --dist <产物目录> ... --branch gh-pages`，
-   生成/合并 `ota.json`、追加 `history.json`，连同 `site/` 一起推到 Pages 分支。
+3. **发布索引与页面**：产出镜像后由 [ZeroWrt-OTA](https://github.com/MinimaxFlora/ZeroWrt-OTA)
+   生成 `ota.json` / `history.json` 并部署静态下载站；插件不再内置页面文件。
 
 `--info` 是一个可选的 JSON，字段缺失会自动推导（`device` / `model` 决定索引 key 的别名，
 `device_vendor` + `device_model` 只用于页面显示名）：
@@ -212,67 +209,19 @@ GitHub Actions 里的最小片段（命令与具体发行版无关）：
 
       # ... 编译固件 ...
 
-      - name: Publish OTA page
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sh tools/publish_site.sh --repo "$GITHUB_REPOSITORY" --dist dist \
-            --device "$DEVICE" --target "$TARGET" --version "$VERSION" \
-            --branch gh-pages
 ```
 
-推送后到仓库 `Settings → Pages` 选 **Deploy from a branch / `gh-pages` / `/`**。
-之后固件就在 `https://<owner>.github.io/<repo>/ota.json` 上检查更新。
+索引发布后，固件在 `https://ota.tatalvpai.vip/ota.json` 检查更新。
 
-想用自己的域名：把域名写进 `site/CNAME`（例如 `ota.example.com`），并在 DNS 里加一条
-`CNAME ota.example.com → <owner>.github.io`（Cloudflare 记得关掉代理，保持 DNS only），
-然后在 Pages 设置里填同一个域名，等证书签发后勾上 Enforce HTTPS。
+## 配套下载站
 
-## 固件下载页（GitHub Pages）
+下载页、更新日志和双语界面在独立仓库：
 
-发布脚本会把 `site/` 里的静态页面连同数据一起推到固件仓库的 `gh-pages` 分支，
-GitHub Pages 直接托管（分支根目录，`.nojekyll` 已带）：
+- <https://github.com/MinimaxFlora/ZeroWrt-OTA>
+- <https://ota.tatalvpai.vip/>
 
-```
-https://<owner>.github.io/<repo>/               # 下载页
-https://<owner>.github.io/<repo>/ota.json       # 插件用的更新索引
-https://<owner>.github.io/<repo>/history.json   # 页面用的历史记录
-```
-
-（示例部署：<https://minimaxflora.github.io/ZeroWrt/>）
-
-分支内容：
-
-| 文件 | 说明 |
-| --- | --- |
-| `index.html` `assets/` | 来自 `site/`，改样式/文案只改这里 |
-| `ota.json` | 最新一次索引（与插件同源，多设备条目合并） |
-| `history.json` | 每次构建追加一条，页面据此渲染更新日志，默认保留 120 条 |
-| `.nojekyll` | 跳过 Jekyll，保证 `assets/` 原样发布 |
-
-![下载页](docs/preview.png)
-
-页面特性：
-
-- 按设备卡片列出最新镜像：版本、构建时间、大小、SHA256（点「复制」），直接下载；
-- x86 的 `传统 BIOS` / `UEFI` 用徽章区分，避免刷错；
-- 更新日志可按设备筛选，Markdown 渲染，带「最新」标记与 GitHub 发布页链接；
-- 中英文切换（`?lang=en` 可直接指定）、明暗主题、移动端适配，零外部依赖（不引用 CDN）。
-
-本地预览（不需要联网）：
-
-```sh
-# 用真实产物生成一次页面数据
-tools/publish_site.sh --repo MinimaxFlora/ZeroWrt --dist dist \
-  --device x86_64 --target x86/64 --version 20261021 \
-  --build-date "$(date +%s)" --site site --no-push
-
-python3 -m http.server -d _site 8000   # 打开 http://localhost:8000
-```
-
-换品牌：改 `site/assets/app.js` 顶部的 `CONFIG`（名称、仓库、设备别名），
-以及 `site/index.html` 里的文案与 `site/assets/logo.png`。
+本仓库只包含 LuCI 插件和命令行后端，不再包含 `site/`、`publish_site.sh`
+或 `gen_ota_index.py`。
 
 ## 命令行
 
@@ -341,12 +290,11 @@ rpcd ucode 模块 (/usr/share/rpcd/ucode/luci.ota)
 配置里关掉 `verify_image`，或 `uci set ota.config.verify_image=0`。
 
 **下载页上的设备名不对 / 想加一台设备**
-索引里的 `label` 决定卡片标题（`gen_ota_index.py --label`，ZeroWrt 会自动取
-`.zerowrt-info.json` 里的厂商 + 型号）；没有 `label` 时用设备标识，再不行就到
-`site/assets/app.js` 的 `CONFIG.labels` 里加一条映射。
+索引里的 `label` 决定卡片标题；ZeroWrt 会自动取 `.zerowrt-info.json` 里的
+厂商 + 型号，没有 `label` 时用设备标识。页面由独立的 ZeroWrt-OTA 仓库维护。
 
 **如何只看某个设备的更新日志**
-在下载页的「更新日志」区域点设备名即可筛选。
+在下载站的更新日志页面选择设备即可筛选。
 
 ## 致谢
 
